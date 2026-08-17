@@ -29,6 +29,9 @@ app = FastAPI(
 BASE_DIR = Path(__file__).parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+# Mount static files
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
 # Store generated quotes in memory (for demo)
 generated_quotes = []
 
