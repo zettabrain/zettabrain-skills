@@ -57,8 +57,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "zbs=zettabrain-skills.cli.main:app",
-            "zettabrain-skills=zettabrain-skills.cli.main:app",
+            "zbs=zettabrain_skills.cli.main:app",
+            "zettabrain-skills=zettabrain_skills.cli.main:app",
         ],
     },
     include_package_data=True,
