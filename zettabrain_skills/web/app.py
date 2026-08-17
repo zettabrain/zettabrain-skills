@@ -65,9 +65,16 @@ def load_available_skills() -> List[Dict[str, Any]]:
     for skill_file in skill_files:
         try:
             skill = load_skill(skill_file)
+
+            # Format name: special handling for 3RVA (all caps)
+            if "3rva" in skill.name.lower():
+                display_name = skill.name.replace("3rva", "3RVA").replace("-", " ").title().replace("3rva", "3RVA")
+            else:
+                display_name = skill.name.replace("-", " ").title()
+
             skills.append({
                 "file": skill_file,
-                "name": skill.name.replace("-", " ").title(),
+                "name": display_name,
                 "description": skill.description,
                 "business_type": skill.business_type,
                 "version": skill.version
@@ -201,6 +208,7 @@ QUOTE NUMBER FORMAT: 3RVA-{quote_date_code}-XXX (use random 3 digits for XXX)
         quote_data = {
             "id": result.id,
             "skill_name": skill.name,
+            "skill_display": "3RVA Quote",
             "customer_name": customer_name or "Customer",
             "customer_email": customer_email,
             "customer_phone": customer_phone,
@@ -318,11 +326,17 @@ async def generate_document(
                 }
             )
 
+        # Format skill display name
+        if "3rva" in skill.name.lower():
+            skill_display = skill.name.replace("3rva", "3RVA").replace("-", " ").title().replace("3rva", "3RVA")
+        else:
+            skill_display = skill.name.replace("-", " ").title()
+
         # Store document
         doc_data = {
             "id": result.id,
             "skill_name": skill.name,
-            "skill_display": skill.name.replace("-", " ").title(),
+            "skill_display": skill_display,
             "customer_name": customer_name or "Customer",
             "customer_email": customer_email,
             "customer_phone": customer_phone,
@@ -403,6 +417,18 @@ async def download_document_pdf(doc_id: str):
     md = markdown.Markdown(extensions=['extra', 'nl2br'])
     content_html = md.convert(document['content'])
 
+    # Determine company name from business context or skill name
+    company_name = BUSINESS_INFO.company_name if BUSINESS_INFO else "Document"
+    company_tagline = ""
+
+    # Special handling for known companies
+    if BUSINESS_INFO and BUSINESS_INFO.company_name == "3RVA":
+        company_name = "3RVA"
+        company_tagline = "Refrigerant Supply & HVAC Services"
+    elif "3rva" in document.get('skill_name', '').lower():
+        company_name = "3RVA"
+        company_tagline = "Refrigerant Supply & HVAC Services"
+
     # Create PDF HTML template
     pdf_html = f"""
     <!DOCTYPE html>
@@ -423,31 +449,40 @@ async def download_document_pdf(doc_id: str):
             .header {{
                 text-align: center;
                 margin-bottom: 30px;
-                border-bottom: 3px solid #5b64f4;
+                border-bottom: 3px solid #667eea;
                 padding-bottom: 20px;
             }}
             .header h1 {{
-                color: #5b64f4;
-                font-size: 24pt;
+                color: #667eea;
+                font-size: 32pt;
                 margin: 0 0 10px 0;
+                letter-spacing: 2px;
+                font-weight: 700;
             }}
-            .header p {{
+            .header .tagline {{
                 color: #666;
+                font-size: 12pt;
+                margin: 5px 0 15px 0;
+            }}
+            .header .doc-type {{
+                color: #888;
+                font-size: 11pt;
                 margin: 5px 0;
+                font-style: italic;
             }}
             .meta {{
                 background: #f8f9ff;
                 padding: 15px;
                 border-radius: 5px;
                 margin-bottom: 25px;
-                border-left: 4px solid #5b64f4;
+                border-left: 4px solid #667eea;
             }}
             .meta-item {{
                 margin: 5px 0;
             }}
             .meta-label {{
                 font-weight: bold;
-                color: #5b64f4;
+                color: #667eea;
             }}
             .content {{
                 white-space: pre-wrap;
@@ -463,18 +498,18 @@ async def download_document_pdf(doc_id: str):
                 border-top: 2px solid #e0e0e0;
                 text-align: center;
                 color: #999;
-                font-size: 9pt;
+                font-size: 8pt;
             }}
             h1, h2, h3 {{
-                color: #5b64f4;
+                color: #667eea;
             }}
         </style>
     </head>
     <body>
         <div class="header">
-            <h1>ZettaBrain Skills</h1>
-            <p>AI-Powered Professional Document Generation</p>
-            <p>{document.get('skill_display', document.get('skill_name', 'Document'))}</p>
+            <h1>{company_name}</h1>
+            {'<p class="tagline">' + company_tagline + '</p>' if company_tagline else ''}
+            <p class="doc-type">{document.get('skill_display', document.get('skill_name', 'Document'))}</p>
         </div>
 
         <div class="meta">
@@ -496,8 +531,7 @@ async def download_document_pdf(doc_id: str):
         </div>
 
         <div class="footer">
-            <p>Generated by ZettaBrain Skills | AI-Powered Document Generation Platform</p>
-            <p>www.zettabrain.com</p>
+            <p>Powered by ZettaBrain Skills</p>
         </div>
     </body>
     </html>
