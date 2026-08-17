@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
 from rich.table import Table
-from typing import Optional
+from typing import Optional, Annotated
 
 from zettabrain_skills import __version__
 from zettabrain_skills.skills.parser import load_skill
@@ -31,12 +31,12 @@ def version():
 
 @app.command()
 def generate(
-    skill_file: str,
-    input: str = typer.Option(..., "--input", "-i"),
-    output: Optional[str] = typer.Option(None, "--output", "-o"),
-    temperature: Optional[float] = typer.Option(None, "--temperature", "-t"),
-    max_tokens: Optional[int] = typer.Option(None, "--max-tokens", "-m"),
-    business: str = typer.Option("default", "--business", "-b"),
+    skill_file: Annotated[str, typer.Argument(help="Path to skill file (.md)")],
+    input: Annotated[str, typer.Option("--input", "-i", help="Input text for generation")],
+    output: Annotated[Optional[str], typer.Option("--output", "-o", help="Output file path")] = None,
+    temperature: Annotated[Optional[float], typer.Option("--temperature", "-t", help="Override skill temperature")] = None,
+    max_tokens: Annotated[Optional[int], typer.Option("--max-tokens", "-m", help="Override skill max_tokens")] = None,
+    business: Annotated[str, typer.Option("--business", "-b", help="Business ID")] = "default",
 ):
     """Generate a document using a skill"""
 
@@ -135,7 +135,7 @@ def generate(
 
 @app.command()
 def validate(
-    skill_file: str,
+    skill_file: Annotated[str, typer.Argument(help="Path to skill file to validate")],
 ):
     """Validate a skill file"""
 
