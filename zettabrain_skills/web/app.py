@@ -166,10 +166,11 @@ async def view_quote(request: Request, quote_id: str):
     if not quote:
         raise HTTPException(status_code=404, detail="Quote not found")
 
-    return templates.TemplateResponse("quote.html", {
-        "request": request,
-        "quote": quote
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="quote.html",
+        context={"quote": quote}
+    )
 
 
 @app.get("/quote/{quote_id}/pdf")
