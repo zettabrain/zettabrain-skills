@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
 from rich.table import Table
-from typing import Optional, Annotated
+from typing import Optional
 
 from zettabrain_skills import __version__
 from zettabrain_skills.skills.parser import load_skill
@@ -31,12 +31,12 @@ def version():
 
 @app.command()
 def generate(
-    skill_file: Annotated[str, typer.Argument()],
-    input: Annotated[str, typer.Option()],
-    output: Annotated[Optional[str], typer.Option()] = None,
-    temperature: Annotated[Optional[float], typer.Option()] = None,
-    max_tokens: Annotated[Optional[int], typer.Option()] = None,
-    business: Annotated[str, typer.Option()] = "default",
+    skill_file: str = typer.Argument(...),
+    input_text: str = typer.Option(..., "--input", "-i"),
+    output_file: Optional[str] = typer.Option(None, "--output", "-o"),
+    temperature: Optional[float] = typer.Option(None, "--temperature", "-t"),
+    max_tokens: Optional[int] = typer.Option(None, "--max-tokens", "-m"),
+    business_id: str = typer.Option("default", "--business", "-b"),
 ):
     """Generate a document using a skill"""
 
@@ -74,9 +74,9 @@ def generate(
         # Generate
         console.print("[blue]⚙️  Generating document...[/blue]")
         request = GenerationRequest(
-            input=input,
+            input=input_text,
             skill_name=skill.name,
-            business_id=business,
+            business_id=business_id,
             temperature=temperature,
             max_tokens=max_tokens,
         )
@@ -108,9 +108,9 @@ def generate(
         console.print()
 
         # Save to file if requested
-        if output:
-            Path(output).write_text(result.content, encoding="utf-8")
-            console.print(f"[green]✓[/green] Saved to [bold]{output}[/bold]")
+        if output_file:
+            Path(output_file).write_text(result.content, encoding="utf-8")
+            console.print(f"[green]✓[/green] Saved to [bold]{output_file}[/bold]")
         else:
             console.print(
                 "[dim]Tip: Use --output/-o to save to a file[/dim]"
@@ -135,7 +135,7 @@ def generate(
 
 @app.command()
 def validate(
-    skill_file: Annotated[str, typer.Argument()]
+    skill_file: str = typer.Argument(...)
 ):
     """Validate a skill file"""
 
