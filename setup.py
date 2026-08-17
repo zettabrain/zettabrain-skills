@@ -11,7 +11,7 @@ long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="zettabrain-skills",
-    version="0.2.0",
+    version="0.3.0",
     author="ZettaBrain",
     author_email="hello@zettabrain.com",
     description="Open-source skill-based document generation platform with AI",
@@ -37,7 +37,7 @@ setup(
     python_requires=">=3.11",
     install_requires=[
         "fastapi>=0.104.0",
-        "typer[all]==0.9.0",
+        "click>=8.0.0",
         "pydantic>=2.5.0",
         "pyyaml>=6.0",
         "httpx>=0.25.2",

@@ -2,25 +2,25 @@
 ZettaBrainSkill CLI - Main entry point
 """
 
-import typer
+import click
 from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
 from rich.table import Table
-from typing import Optional
 
 from zettabrain_skills import __version__
 from zettabrain_skills.skills.parser import load_skill
 from zettabrain_skills.core.engine import GenerationEngine
 from zettabrain_skills.core.models import GenerationRequest
 
-app = typer.Typer(
-    name="zettabrain-skills",
-    help="ZettaBrainSkill - AI-powered document generation with skills",
-    add_completion=False,
-)
 console = Console()
+
+
+@click.group()
+def app():
+    """ZettaBrainSkill - AI-powered document generation with skills"""
+    pass
 
 
 @app.command()
@@ -30,14 +30,13 @@ def version():
 
 
 @app.command()
-def generate(
-    skill_file: str = typer.Argument(...),
-    input_text: str = typer.Option(..., "--input", "-i"),
-    output_file: Optional[str] = typer.Option(None, "--output", "-o"),
-    temperature: Optional[float] = typer.Option(None, "--temperature", "-t"),
-    max_tokens: Optional[int] = typer.Option(None, "--max-tokens", "-m"),
-    business_id: str = typer.Option("default", "--business", "-b"),
-):
+@click.argument('skill_file', type=click.Path(exists=True))
+@click.option('--input', '-i', 'input_text', required=True, help='Input text for generation')
+@click.option('--output', '-o', 'output_file', type=click.Path(), help='Output file path')
+@click.option('--temperature', '-t', type=float, help='Override skill temperature')
+@click.option('--max-tokens', '-m', type=int, help='Override skill max_tokens')
+@click.option('--business', '-b', 'business_id', default='default', help='Business ID')
+def generate(skill_file, input_text, output_file, temperature, max_tokens, business_id):
     """Generate a document using a skill"""
 
     try:
@@ -62,7 +61,7 @@ def generate(
                 "[red]✗ Ollama is not running or not accessible.[/red]\n"
                 "[yellow]Start it with:[/yellow] ollama serve"
             )
-            raise typer.Exit(1)
+            raise click.Abort()
 
         model_info = engine.llm_provider.get_model_info()
         console.print(
@@ -85,7 +84,7 @@ def generate(
 
         if not result.success:
             console.print(f"[red]✗ Generation failed: {result.error}[/red]")
-            raise typer.Exit(1)
+            raise click.Abort()
 
         # Validate output
         is_valid, warnings = engine.validate_output(skill, result)
@@ -124,19 +123,18 @@ def generate(
 
     except FileNotFoundError as e:
         console.print(f"[red]✗ File not found: {e}[/red]")
-        raise typer.Exit(1)
+        raise click.Abort()
     except ValueError as e:
         console.print(f"[red]✗ Validation error: {e}[/red]")
-        raise typer.Exit(1)
+        raise click.Abort()
     except Exception as e:
         console.print(f"[red]✗ Error: {e}[/red]")
-        raise typer.Exit(1)
+        raise click.Abort()
 
 
 @app.command()
-def validate(
-    skill_file: str = typer.Argument(...)
-):
+@click.argument('skill_file', type=click.Path(exists=True))
+def validate(skill_file):
     """Validate a skill file"""
 
     try:
@@ -177,14 +175,14 @@ def validate(
 
     except FileNotFoundError:
         console.print(f"[red]✗ File not found: {skill_file}[/red]")
-        raise typer.Exit(1)
+        raise click.Abort()
     except ValueError as e:
         console.print(f"[red]✗ Invalid skill:[/red]")
         console.print(f"  {e}")
-        raise typer.Exit(1)
+        raise click.Abort()
     except Exception as e:
         console.print(f"[red]✗ Error: {e}[/red]")
-        raise typer.Exit(1)
+        raise click.Abort()
 
 
 @app.command()
@@ -208,7 +206,7 @@ def check():
         console.print("\n[yellow]Make sure Ollama is running:[/yellow]")
         console.print("  1. Start Ollama: ollama serve")
         console.print("  2. Pull a model: ollama pull llama3.1:8b")
-        raise typer.Exit(1)
+        raise click.Abort()
 
 
 if __name__ == "__main__":
