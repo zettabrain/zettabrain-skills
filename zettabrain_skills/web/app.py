@@ -39,10 +39,11 @@ generated_quotes = []
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Home page with quote generator form"""
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "title": "3RVA Quote Generator"
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"title": "3RVA Quote Generator"}
+    )
 
 
 @app.post("/generate", response_class=HTMLResponse)
@@ -76,11 +77,14 @@ async def generate_quote(
 
         # Check if Ollama is running
         if not engine.llm_provider.check_health():
-            return templates.TemplateResponse("error.html", {
-                "request": request,
-                "error": "Ollama is not running. Please start Ollama first.",
-                "suggestion": "Run: ollama serve"
-            })
+            return templates.TemplateResponse(
+                request=request,
+                name="error.html",
+                context={
+                    "error": "Ollama is not running. Please start Ollama first.",
+                    "suggestion": "Run: ollama serve"
+                }
+            )
 
         # Build enhanced request with customer details
         enhanced_request = customer_request
@@ -101,11 +105,14 @@ async def generate_quote(
         result = engine.generate(skill, gen_request)
 
         if not result.success:
-            return templates.TemplateResponse("error.html", {
-                "request": request,
-                "error": f"Generation failed: {result.error}",
-                "suggestion": "Please try again or check Ollama logs."
-            })
+            return templates.TemplateResponse(
+                request=request,
+                name="error.html",
+                context={
+                    "error": f"Generation failed: {result.error}",
+                    "suggestion": "Please try again or check Ollama logs."
+                }
+            )
 
         # Store quote
         quote_data = {
@@ -124,26 +131,31 @@ async def generate_quote(
         if len(generated_quotes) > 50:
             generated_quotes.pop()
 
-        return templates.TemplateResponse("quote.html", {
-            "request": request,
-            "quote": quote_data
-        })
+        return templates.TemplateResponse(
+            request=request,
+            name="quote.html",
+            context={"quote": quote_data}
+        )
 
     except Exception as e:
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error": str(e),
-            "suggestion": "Please check that Ollama is running and the skill file exists."
-        })
+        return templates.TemplateResponse(
+            request=request,
+            name="error.html",
+            context={
+                "error": str(e),
+                "suggestion": "Please check that Ollama is running and the skill file exists."
+            }
+        )
 
 
 @app.get("/quotes", response_class=HTMLResponse)
 async def list_quotes(request: Request):
     """List all generated quotes"""
-    return templates.TemplateResponse("quotes.html", {
-        "request": request,
-        "quotes": generated_quotes
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="quotes.html",
+        context={"quotes": generated_quotes}
+    )
 
 
 @app.get("/quote/{quote_id}", response_class=HTMLResponse)
