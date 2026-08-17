@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3RVA Quote Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 200px;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .secondary-button {
+            background: #f5f5f5;
+            color: #667eea;
+            margin-top: 15px;
+        }
+
+        .secondary-button:hover {
+            background: #e0e0e0;
+        }
+
+        .example {
+            background: #f8f9ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .example strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .card {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧊 3RVA Quote Generator</h1>
+            <p>Generate professional refrigerant quotes instantly</p>
+        </div>
+
+        <div class="card">
+            <form id="quoteForm" method="POST" action="/generate">
+                <div class="form-group">
+                    <label for="customer_name">Customer Name (Optional)</label>
+                    <input type="text" id="customer_name" name="customer_name" placeholder="ABC HVAC Services">
+                </div>
+
+                <div class="form-group">
+                    <label for="customer_email">Email (Optional)</label>
+                    <input type="email" id="customer_email" name="customer_email" placeholder="contact@abchvac.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="customer_phone">Phone (Optional)</label>
+                    <input type="tel" id="customer_phone" name="customer_phone" placeholder="(804) 555-1234">
+                </div>
+
+                <div class="form-group">
+                    <label for="customer_request">Customer Request *</label>
+                    <textarea id="customer_request" name="customer_request" required placeholder="Paste email or phone request here..."></textarea>
+
+                    <div class="example">
+                        <strong>Example:</strong>
+                        Need 100 lbs R-22 reclaimed refrigerant delivered same-day to 4500 Cox Road, Glen Allen VA 23060. Medical office AC is down, critical situation. Need by 4pm today.
+                    </div>
+                </div>
+
+                <button type="submit" class="button">Generate Quote</button>
+                <button type="button" class="button secondary-button" onclick="window.location.href='/quotes'">
+                    View Past Quotes
+                </button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Generating your quote... This may take 1-2 minutes.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('quoteForm').addEventListener('submit', function() {
+            document.getElementById('loading').classList.add('active');
+            document.querySelector('.button').disabled = true;
+        });
+
+        // Auto-resize textarea
+        const textarea = document.getElementById('customer_request');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+
+        // Sample data for demo
+        if (window.location.search.includes('demo=1')) {
+            document.getElementById('customer_name').value = 'Premier HVAC Services';
+            document.getElementById('customer_email').value = 'john@premierhvac.com';
+            document.getElementById('customer_phone').value = '(804) 555-1234';
+            document.getElementById('customer_request').value = 'Emergency request from Premier HVAC Services. Medical office building AC is down in Glen Allen VA. Need 100 lbs R-22 reclaimed refrigerant delivered same-day to 4500 Cox Road, Glen Allen VA 23060. Critical - patients on site. Need by 4pm today. Contact John Martinez.';
+        }
+    </script>
+</body>
+</html>

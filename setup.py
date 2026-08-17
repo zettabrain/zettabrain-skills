@@ -45,6 +45,7 @@ setup(
         "uvicorn[standard]>=0.24.0",
         "python-frontmatter>=1.1.0",
         "rich>=13.7.0",
+        "jinja2>=3.1.2",
     ],
     extras_require={
         "dev": [
