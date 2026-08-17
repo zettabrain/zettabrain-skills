@@ -11,7 +11,7 @@ long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="zettabrain-skills",
-    version="0.1.4",
+    version="0.1.5",
     author="ZettaBrain",
     author_email="hello@zettabrain.com",
     description="Open-source skill-based document generation platform with AI",

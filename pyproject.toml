@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "zettabrain-skills"
-version = "0.1.4"
+version = "0.1.5"
 description = "Open-source skill-based document generation platform with AI"
 authors = ["ZettaBrain <hello@zettabrain.com>"]
 license = "Apache-2.0"
