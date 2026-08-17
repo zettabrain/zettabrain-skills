@@ -1,0 +1,71 @@
+# Demo Customer Request for Mike (3RVA CEO)
+
+## Scenario 1: Emergency Commercial HVAC Repair
+
+**Customer**: Premier HVAC Services LLC
+**Contact**: John Martinez, Service Manager
+**Phone**: (804) 555-1234
+**Address**: 4500 Cox Road, Glen Allen, VA 23060
+
+**Request**:
+"We have an emergency situation at a medical office building in Glen Allen. Their main AC unit is down and we need 100 lbs of R-22 refrigerant (reclaimed is fine) delivered by end of day today. The building has patients and the temperature is critical. Can you do same-day emergency delivery to 4500 Cox Road, Glen Allen VA 23060? We need it by 4pm."
+
+---
+
+## Scenario 2: Large Commercial Contract Order
+
+**Customer**: Richmond Commercial Climate Control
+**Contact**: Sarah Thompson, Purchasing Director
+**Phone**: (804) 555-8900
+**Address**: 2300 Westwood Avenue, Richmond, VA 23230
+
+**Request**:
+"We're a commercial HVAC contractor working on multiple projects this month. Need to order: 250 lbs of R-410A refrigerant (new), standard delivery is fine. Delivery to our warehouse at 2300 Westwood Avenue, Richmond VA 23230. We have an established account with you (Net 30 terms). Can you provide a quote?"
+
+---
+
+## Scenario 3: Residential HVAC Repair (Small Order)
+
+**Customer**: Cool Breeze HVAC
+**Contact**: Mike Davis, Owner
+**Phone**: (804) 555-4567
+**Address**: 9842 Staples Mill Road, Glen Allen, VA 23060
+
+**Request**:
+"Doing a residential AC repair in Henrico County tomorrow. Need 25 lbs of R-410A (new) delivered next day to my shop at 9842 Staples Mill Road, Glen Allen VA 23060. This is a new customer for us so we'll need to prepay."
+
+---
+
+## For the Demo with Mike, Use Scenario 1:
+
+### Command to run:
+
+```bash
+zbs generate examples/3rva-quote-full.md \
+  --input "Emergency request from Premier HVAC Services. Medical office building AC is down in Glen Allen VA. Need 100 lbs R-22 reclaimed refrigerant delivered same-day to 4500 Cox Road, Glen Allen VA 23060. Critical - patients on site. Need by 4pm today. Contact John Martinez at (804) 555-1234." \
+  --output premier-hvac-emergency-quote.md
+```
+
+This will generate:
+✅ Full itemized quote with pricing
+✅ Volume discount (5% for 100 lbs)
+✅ Same-day emergency delivery fee
+✅ Glen Allen Zone 2 delivery
+✅ Cylinder deposits
+✅ Tax calculation
+✅ Professional format ready to send
+
+### Expected Total:
+- Product: 100 lbs × $65/lb = $6,500
+- Volume discount: -$325 (5%)
+- Product subtotal: $6,175
+- Cylinders: $400 deposit (refundable)
+- Delivery Zone 2: $45
+- Same-day emergency: $75
+- Environmental fee: $5
+- Subtotal: $6,700
+- Tax (5.3%): $355.10
+- **TOTAL: $7,055.10** (includes $400 refundable deposit)
+- **Net payment: $6,655.10**
+
+This shows the full power of the system - it reads the pricing rules, calculates everything correctly, and generates a professional quote ready to send to the customer.
