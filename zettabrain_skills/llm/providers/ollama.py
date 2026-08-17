@@ -11,7 +11,7 @@ class OllamaProvider(LLMProvider):
     """Ollama LLM provider for local model inference"""
 
     def __init__(
-        self, base_url: str = "http://localhost:11434", model: str = "llama3.1:8b", timeout: int = 120
+        self, base_url: str = "http://localhost:11434", model: str = "llama3.1:8b", timeout: int = 300
     ):
         """
         Initialize Ollama provider
