@@ -205,8 +205,9 @@
 
             <div class="actions">
                 <button class="button success" onclick="copyToClipboard()">📋 Copy Quote</button>
+                <a href="/quote/{{ quote.id }}/pdf" class="button" download>📄 Download PDF</a>
                 <button class="button" onclick="window.print()">🖨️ Print Quote</button>
-                <button class="button secondary" onclick="downloadQuote()">💾 Download</button>
+                <button class="button secondary" onclick="downloadText()">💾 Download Text</button>
                 <a href="/" class="button secondary">🔄 New Quote</a>
             </div>
         </div>
@@ -227,7 +228,7 @@
             });
         }
 
-        function downloadQuote() {
+        function downloadText() {
             const content = document.getElementById('quoteContent').innerText;
             const blob = new Blob([content], { type: 'text/plain' });
             const url = window.URL.createObjectURL(blob);

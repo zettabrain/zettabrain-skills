@@ -46,6 +46,8 @@ setup(
         "python-frontmatter>=1.1.0",
         "rich>=13.7.0",
         "jinja2>=3.1.2",
+        "weasyprint>=60.0",
+        "markdown>=3.5",
     ],
     extras_require={
         "dev": [
