@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Document - ZettaBrain Skills</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            color: #1a1a1a;
+        }
+
+        .navbar {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            height: 40px;
+            width: auto;
+        }
+
+        .brand-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: #5b64f4;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        .success-banner {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+        }
+
+        .success-banner h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .success-banner p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .meta-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .meta-value {
+            font-size: 14px;
+            color: #111827;
+            font-weight: 500;
+        }
+
+        .document-content {
+            white-space: pre-wrap;
+            font-family: 'Courier New', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            background: #fafafa;
+            padding: 24px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            color: #1f2937;
+            overflow-x: auto;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+        .button-primary {
+            background: #5b64f4;
+            color: white;
+        }
+
+        .button-primary:hover {
+            background: #4b54e4;
+            box-shadow: 0 4px 12px rgba(91, 100, 244, 0.3);
+        }
+
+        .button-secondary {
+            background: white;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .button-secondary:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+        .button-success {
+            background: #22c55e;
+            color: white;
+        }
+
+        .button-success:hover {
+            background: #16a34a;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+
+        @media (max-width: 640px) {
+            .navbar {
+                padding: 12px 16px;
+            }
+
+            .logo {
+                height: 32px;
+            }
+
+            .container {
+                padding: 24px 16px;
+            }
+
+            .success-banner h1 {
+                font-size: 20px;
+            }
+
+            .card {
+                padding: 24px;
+            }
+
+            .document-content {
+                font-size: 12px;
+                padding: 16px;
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo-container">
+            <img src="/static/images/zettabrain-logo-primary.jpg" alt="ZettaBrain" class="logo">
+            <span class="brand-text">Skills</span>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/generated" class="nav-link">All Documents</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="success-banner">
+            <h1>✓ Document Generated Successfully</h1>
+            <p>Your {{ document.skill_display or document.skill_name }} has been generated and is ready to use.</p>
+        </div>
+
+        <div class="card">
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <span class="meta-label">Skill Type</span>
+                    <span class="meta-value">{{ document.skill_display or document.skill_name }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Customer</span>
+                    <span class="meta-value">{{ document.customer_name }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Generated</span>
+                    <span class="meta-value">{{ document.created_at }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Generation Time</span>
+                    <span class="meta-value">{{ document.generation_time }}</span>
+                </div>
+                {% if document.customer_email %}
+                <div class="meta-item">
+                    <span class="meta-label">Email</span>
+                    <span class="meta-value">{{ document.customer_email }}</span>
+                </div>
+                {% endif %}
+                {% if document.customer_phone %}
+                <div class="meta-item">
+                    <span class="meta-label">Phone</span>
+                    <span class="meta-value">{{ document.customer_phone }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="document-content">{{ document.content }}</div>
+
+            <div class="action-buttons">
+                <a href="/document/{{ document.id }}/pdf" class="button button-success">📥 Download PDF</a>
+                <button onclick="copyToClipboard()" class="button button-primary">📋 Copy to Clipboard</button>
+                <a href="/" class="button button-secondary">🔄 Generate Another</a>
+                <a href="/generated" class="button button-secondary">📚 View All Documents</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard() {
+            const content = document.querySelector('.document-content').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                btn.style.background = '#22c55e';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
