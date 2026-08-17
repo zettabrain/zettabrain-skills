@@ -31,12 +31,12 @@ def version():
 
 @app.command()
 def generate(
-    skill_file: Annotated[str, typer.Argument(help="Path to skill file (.md)")],
-    input: Annotated[str, typer.Option("--input", "-i", help="Input text for generation")],
-    output: Annotated[Optional[str], typer.Option("--output", "-o", help="Output file path")] = None,
-    temperature: Annotated[Optional[float], typer.Option("--temperature", "-t", help="Override skill temperature")] = None,
-    max_tokens: Annotated[Optional[int], typer.Option("--max-tokens", "-m", help="Override skill max_tokens")] = None,
-    business: Annotated[str, typer.Option("--business", "-b", help="Business ID")] = "default",
+    skill_file: Annotated[str, typer.Argument()],
+    input: Annotated[str, typer.Option()],
+    output: Annotated[Optional[str], typer.Option()] = None,
+    temperature: Annotated[Optional[float], typer.Option()] = None,
+    max_tokens: Annotated[Optional[int], typer.Option()] = None,
+    business: Annotated[str, typer.Option()] = "default",
 ):
     """Generate a document using a skill"""
 
@@ -135,7 +135,7 @@ def generate(
 
 @app.command()
 def validate(
-    skill_file: Annotated[str, typer.Argument(help="Path to skill file to validate")],
+    skill_file: Annotated[str, typer.Argument()]
 ):
     """Validate a skill file"""
 
