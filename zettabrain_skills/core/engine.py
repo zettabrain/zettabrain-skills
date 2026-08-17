@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 from zettabrain_skills.core.models import Skill, GenerationRequest, GenerationResult
 from zettabrain_skills.llm.base import LLMProvider
-from zettabrain_skills.llm.providers.ollama import OllamaProvider
+from zettabrain_skills.llm.factory import create_llm_provider
 
 
 class GenerationEngine:
@@ -19,9 +19,10 @@ class GenerationEngine:
         Initialize generation engine
 
         Args:
-            llm_provider: LLM provider instance (defaults to OllamaProvider)
+            llm_provider: LLM provider instance (defaults to configured provider)
+                         Uses LLM_PROVIDER env var: ollama (default), groq, together, bedrock
         """
-        self.llm_provider = llm_provider or OllamaProvider()
+        self.llm_provider = llm_provider or create_llm_provider()
 
     def build_prompt(
         self, skill: Skill, user_input: str, context: Optional[Dict[str, Any]] = None
