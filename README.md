@@ -1,254 +1,59 @@
-# ZettaBrainSkill
+# 3RVA Claude Team Build Package
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+Scaffolding for the six SOW line items. Everything marked `<<FILL: ...>>` requires
+information only 3RVA can give you — those slots are the discovery deliverable.
 
-> Open-source skill-based document generation platform with AI
+## Build order (this order matters)
 
-Transform your business with AI-powered document automation using open-source models and portable skills.
+1. **Discovery** → `discovery/QUESTIONNAIRE.md`
+   Nothing below can be written until this is filled in. Run it as the paid engagement.
 
-## 🚀 Quick Install
+2. **Corpus** → `corpus/CORPUS-SPEC.md`
+   Can run in parallel with discovery — it doesn't depend on 3RVA's answers.
 
-### Ubuntu/Debian (Recommended)
+3. **Compliance Response Skill** → `compliance-response/`
+   Build second. It depends only on the corpus, not on Mike's business logic.
+   Ship this first so they see value while you're still writing the rest.
 
-```bash
-# Install via pipx
-pipx install git+https://github.com/zettabrain/zettabrainskill.git
+4. **Quote Generation Skill** → `quote-generation/`
+   Build third. Fully dependent on discovery output.
 
-# Install Ollama
-curl -fsSL https://ollama.com/install.sh | sh
+5. **Recovery Documentation Skill** → `recovery-documentation/`
+   Build fourth. Depends on discovery plus a sample of their existing job tickets.
 
-# Start Ollama and pull model
-ollama serve &
-ollama pull llama3.1:8b
+6. **Workspace config + training** → last. Don't configure sharing until the
+   content is stable, or you'll retrain people on a moving target.
 
-# Verify
-zbs version
-zbs check
-```
-
-**📖 [Full Ubuntu Installation Guide](INSTALL-UBUNTU.md)**
-
-### macOS
-
-```bash
-# Install Ollama
-brew install ollama
-ollama serve
-ollama pull llama3.1:8b
-
-# Install ZettaBrainSkill (development mode)
-git clone https://github.com/zettabrain/zettabrainskill.git
-cd zettabrainskill
-poetry install
-poetry shell
-```
-
-### From Source (Any OS)
-
-```bash
-# Clone repository
-git clone https://github.com/zettabrain/zettabrainskill.git
-cd zettabrainskill
-
-# Install with Poetry
-poetry install
-poetry shell
-```
-
-### 3. Verify Installation
-
-```bash
-# Check version
-zbs version
-
-# Check Ollama connection
-zbs check
-```
-
-### 4. Generate Your First Document
-
-```bash
-# Validate a skill
-zbs validate examples/simple-summarizer.md
-
-# Generate a summary
-zbs generate examples/simple-summarizer.md \
-  --input "Artificial intelligence is transforming businesses. Companies use AI for customer service, data analysis, and automation. Challenges include data quality and skilled personnel needs."
-
-# Generate and save
-zbs generate examples/simple-summarizer.md \
-  --input "Your text here..." \
-  --output summary.md
-```
-
-## Features
-
-- 🎯 **Skill-Based**: Define tasks as portable skill files
-- 🤖 **Open Source LLMs**: Use Llama, Mistral, Qwen locally
-- 📚 **Business Agnostic**: Works for any industry
-- 🏠 **Self-Hosted**: Full data control
-- ⚡ **Fast**: Optimized for performance
-- 🔧 **Extensible**: Add custom providers and skills
-
-## Example Usage
-
-### Summarize Text
-
-```bash
-zbs generate examples/simple-summarizer.md \
-  --input "Your long text here..."
-```
-
-### Generate 3RVA Quote
-
-```bash
-zbs generate examples/3rva-quote-simple.md \
-  --input "Customer needs 100 lbs R-22 delivered to Richmond, VA"
-```
-
-### Custom Parameters
-
-```bash
-zbs generate my-skill.md \
-  --input "..." \
-  --temperature 0.3 \
-  --max-tokens 1000 \
-  --output result.md
-```
-
-## Creating Skills
-
-Skills are Markdown files with YAML frontmatter:
-
-```markdown
----
-name: my-skill
-version: 1.0.0
-description: What this skill does and when to use it
-business_type: generic
-temperature: 0.7
-max_tokens: 2000
----
-
-# Skill Instructions
-
-Your instructions for the AI go here in Markdown format.
-
-## Procedure
-
-1. Step one
-2. Step two
-...
-```
-
-See `/examples` for more skill examples.
-
-## CLI Commands
-
-```bash
-# Generate document
-zbs generate <skill-file> --input "..." [--output file.md]
-
-# Validate skill
-zbs validate <skill-file>
-
-# Check Ollama status
-zbs check
-
-# Show version
-zbs version
-```
-
-## Project Structure
+## How a Skill is structured
 
 ```
-zettabrainskill/
-├── zettabrainskill/          # Main package
-│   ├── core/                 # Core models and engine
-│   ├── skills/               # Skill parsing and management
-│   ├── llm/                  # LLM providers
-│   └── cli/                  # Command-line interface
-├── examples/                 # Example skills
-├── tests/                    # Test suite
-└── docs/                     # Documentation
+skill-name/
+├── SKILL.md          (required — YAML frontmatter + instructions)
+└── references/       (optional — loaded only when needed)
 ```
 
-## Requirements
+The `description` in the frontmatter is the trigger. Claude reads only the name and
+description until it decides the Skill is relevant, then loads the body. Keep the body
+under ~500 lines; push detail into `references/` and point to it from the body.
 
-- Python 3.11+
-- Ollama (for local LLM inference)
-- 8GB+ RAM recommended
+Write descriptions slightly pushy. Skills tend to under-trigger — a description that
+only says what the Skill does will get skipped on requests that should have hit it.
+Name the situations, not just the capability.
 
-## Development
+## The one design rule that matters most here
 
-```bash
-# Install dev dependencies
-poetry install
+3RVA is a regulated business. **Every Skill in this package must answer from the
+corpus, never from the model's own recollection of regulation.** Regulatory detail
+recalled from training data is the single biggest liability in this deployment — it
+will be confident, plausible, and occasionally wrong, and Mike has no way to tell.
 
-# Run tests
-poetry run pytest
+Every Skill below enforces this the same way: cite the corpus document, or say the
+corpus doesn't cover it. Do not soften this when you edit them.
 
-# Format code
-poetry run black zettabrainskill/
+## Testing before you hand over
 
-# Lint
-poetry run ruff check zettabrainskill/
-```
-
-## Architecture
-
-ZettaBrainSkill consists of:
-
-1. **Skill Parser**: Parses YAML+Markdown skill files
-2. **LLM Provider**: Abstraction layer for multiple LLM backends
-3. **Generation Engine**: Orchestrates skill execution
-4. **CLI**: User-friendly command-line interface
-
-## Use Cases
-
-- **Service Businesses**: Quotes, compliance responses, field documentation
-- **Manufacturing**: RFQs, quality reports, equipment logs
-- **Consulting**: Proposals, status reports, research memos
-- **Healthcare**: Patient summaries, prior authorizations
-- **And more**: Any repetitive document generation task
-
-## Roadmap
-
-- [x] Core skill parser and engine
-- [x] Ollama provider
-- [x] CLI interface
-- [ ] REST API
-- [ ] Vector database for corpus
-- [ ] Citation system
-- [ ] Discovery processor
-- [ ] Web UI
-- [ ] Additional LLM providers (vLLM, etc.)
-
-## Documentation
-
-- [Quick Start](../QUICK-START.md) - Detailed setup guide
-- [Architecture](../ARCHITECTURE.md) - System design
-- [Skill Specification](../SKILL-SPECIFICATION.md) - How to create skills
-- [Implementation Roadmap](../IMPLEMENTATION-ROADMAP.md) - Development plan
-
-## License
-
-Apache 2.0
-
-## Support
-
-- GitHub Issues: [coming soon]
-- Email: support@zettabrain.com
-- Documentation: [coming soon]
-
-## Acknowledgments
-
-Built with inspiration from Claude Team Skills by Anthropic.
-
----
-
-**Ready to automate your documents with AI?**
-
-Start with `zbs check` to verify your setup, then try `zbs generate examples/simple-summarizer.md --input "your text"`
+For each Skill, write 3–5 prompts in the words Mike's people would actually use, run
+them with the Skill installed, and have Mike read the outputs. He is the only person
+who can tell you the quote terms are wrong. Budget half a day for this — it is the
+difference between a deployment that gets used and one that gets abandoned in week
+three.

@@ -1,4 +1,4 @@
-# Publishing ZettaBrainSkill to GitHub
+# Publishing ZettaBrain Skills to GitHub
 
 Step-by-step guide to publish the repository to https://github.com/zettabrain
 
@@ -14,7 +14,7 @@ Step-by-step guide to publish the repository to https://github.com/zettabrain
 
 1. Go to https://github.com/organizations/zettabrain/repositories/new
 2. Fill in details:
-   - **Repository name**: `zettabrainskill`
+   - **Repository name**: `zettabrain-skills`
    - **Description**: `Open-source skill-based document generation platform with AI`
    - **Visibility**: Public ✓
    - **Initialize repository**: ❌ Do NOT check (we have code already)
@@ -24,7 +24,7 @@ Step-by-step guide to publish the repository to https://github.com/zettabrain
 
 ```bash
 # If you have gh CLI installed
-gh repo create zettabrain/zettabrainskill \
+gh repo create zettabrain/zettabrain-skills \
   --public \
   --description "Open-source skill-based document generation platform with AI" \
   --source=. \
@@ -35,7 +35,7 @@ gh repo create zettabrain/zettabrainskill \
 
 ```bash
 # Navigate to project
-cd /Users/olajideshobowale/Documents/ZettaBrain/Business/3rva/zettabrainskill
+cd /Users/olajideshobowale/Documents/ZettaBrain/Business/3rva/zettabrain-skills
 
 # Check git status (should be initialized)
 git status
@@ -55,7 +55,7 @@ git add .
 git status
 
 # Create initial commit
-git commit -m "Initial commit: ZettaBrainSkill v0.1.0
+git commit -m "Initial commit: ZettaBrain Skills v0.1.0
 
 - Core skill parser and validator
 - LLM provider abstraction (Ollama)
@@ -78,7 +78,7 @@ Features:
 
 ```bash
 # Add GitHub remote
-git remote add origin https://github.com/zettabrain/zettabrainskill.git
+git remote add origin https://github.com/zettabrain/zettabrain-skills.git
 
 # Verify remote
 git remote -v
@@ -95,7 +95,7 @@ git push -u origin main
 
 ### On GitHub Web Interface
 
-1. Go to https://github.com/zettabrain/zettabrainskill
+1. Go to https://github.com/zettabrain/zettabrain-skills
 
 2. **Settings → General**
    - Features: ✓ Wikis, ✓ Issues, ✓ Projects
@@ -113,15 +113,15 @@ git push -u origin main
 
 ### Via GitHub Web Interface
 
-1. Go to https://github.com/zettabrain/zettabrainskill/releases/new
+1. Go to https://github.com/zettabrain/zettabrain-skills/releases/new
 2. Fill in:
    - **Tag version**: `v0.1.0`
-   - **Release title**: `ZettaBrainSkill v0.1.0 - Initial Release`
+   - **Release title**: `ZettaBrain Skills v0.1.0 - Initial Release`
    - **Description**:
      ```markdown
-     # ZettaBrainSkill v0.1.0 - Initial Release 🎉
+     # ZettaBrain Skills v0.1.0 - Initial Release 🎉
      
-     First public release of ZettaBrainSkill - an open-source skill-based document generation platform.
+     First public release of ZettaBrain Skills - an open-source skill-based document generation platform.
      
      ## Features
      
@@ -137,15 +137,15 @@ git push -u origin main
      
      ### Ubuntu/Debian
      ```bash
-     pipx install git+https://github.com/zettabrain/zettabrainskill.git
+     pipx install git+https://github.com/zettabrain/zettabrain-skills.git
      ```
      
      See [INSTALL-UBUNTU.md](INSTALL-UBUNTU.md) for detailed instructions.
      
      ### From Source
      ```bash
-     git clone https://github.com/zettabrain/zettabrainskill.git
-     cd zettabrainskill
+     git clone https://github.com/zettabrain/zettabrain-skills.git
+     cd zettabrain-skills
      poetry install
      ```
      
@@ -172,8 +172,8 @@ git push -u origin main
      ## Links
      
      - 📖 [Documentation](README.md)
-     - 🐛 [Report Issues](https://github.com/zettabrain/zettabrainskill/issues)
-     - 💬 [Discussions](https://github.com/zettabrain/zettabrainskill/discussions)
+     - 🐛 [Report Issues](https://github.com/zettabrain/zettabrain-skills/issues)
+     - 💬 [Discussions](https://github.com/zettabrain/zettabrain-skills/discussions)
      ```
 3. Click "Publish release"
 
@@ -181,8 +181,8 @@ git push -u origin main
 
 ```bash
 gh release create v0.1.0 \
-  --title "ZettaBrainSkill v0.1.0 - Initial Release" \
-  --notes "First public release of ZettaBrainSkill"
+  --title "ZettaBrain Skills v0.1.0 - Initial Release" \
+  --notes "First public release of ZettaBrain Skills"
 ```
 
 ## Step 7: Set Up GitHub Actions (Optional)
@@ -228,11 +228,11 @@ jobs:
     
     - name: Run linting
       run: |
-        poetry run ruff check zettabrainskill/
+        poetry run ruff check zettabrain-skills/
     
     - name: Check formatting
       run: |
-        poetry run black --check zettabrainskill/
+        poetry run black --check zettabrain-skills/
 ```
 
 Commit and push:
@@ -290,7 +290,7 @@ What you expected to happen.
 **Environment:**
 - OS: [e.g., Ubuntu 22.04]
 - Python version: [e.g., 3.11]
-- ZettaBrainSkill version: [e.g., 0.1.0]
+- ZettaBrain Skills version: [e.g., 0.1.0]
 - Ollama version: [e.g., 0.1.20]
 
 **Additional context**
@@ -325,9 +325,9 @@ Any other context or screenshots.
 
 ### On GitHub
 
-1. Create a discussion: https://github.com/zettabrain/zettabrainskill/discussions
+1. Create a discussion: https://github.com/zettabrain/zettabrain-skills/discussions
 2. Category: Announcements
-3. Title: "ZettaBrainSkill v0.1.0 Released!"
+3. Title: "ZettaBrain Skills v0.1.0 Released!"
 4. Link to release notes
 
 ### Social Media (Optional)
@@ -341,8 +341,8 @@ Any other context or screenshots.
 
 ```bash
 # Clone and setup (for contributors)
-git clone https://github.com/zettabrain/zettabrainskill.git
-cd zettabrainskill
+git clone https://github.com/zettabrain/zettabrain-skills.git
+cd zettabrain-skills
 poetry install
 
 # Development workflow
@@ -401,14 +401,14 @@ After publishing, verify:
 
 ```bash
 git remote remove origin
-git remote add origin https://github.com/zettabrain/zettabrainskill.git
+git remote add origin https://github.com/zettabrain/zettabrain-skills.git
 ```
 
 ### Error: "Permission denied (publickey)"
 
 Use HTTPS instead of SSH, or set up SSH keys:
 ```bash
-git remote set-url origin https://github.com/zettabrain/zettabrainskill.git
+git remote set-url origin https://github.com/zettabrain/zettabrain-skills.git
 ```
 
 ### Error: "refusing to merge unrelated histories"
@@ -421,6 +421,6 @@ git pull origin main --allow-unrelated-histories
 
 **Repository published!** 🎉
 
-URL: https://github.com/zettabrain/zettabrainskill
+URL: https://github.com/zettabrain/zettabrain-skills
 
-Install: `pipx install git+https://github.com/zettabrain/zettabrainskill.git`
+Install: `pipx install git+https://github.com/zettabrain/zettabrain-skills.git`

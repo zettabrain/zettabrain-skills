@@ -6,9 +6,9 @@ import uuid
 import time
 from datetime import datetime
 from typing import Dict, Any, Optional
-from zettabrainskill.core.models import Skill, GenerationRequest, GenerationResult
-from zettabrainskill.llm.base import LLMProvider
-from zettabrainskill.llm.providers.ollama import OllamaProvider
+from zettabrain_skills.core.models import Skill, GenerationRequest, GenerationResult
+from zettabrain_skills.llm.base import LLMProvider
+from zettabrain_skills.llm.providers.ollama import OllamaProvider
 
 
 class GenerationEngine:

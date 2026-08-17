@@ -10,13 +10,13 @@ from rich.markdown import Markdown
 from rich.table import Table
 from typing import Optional
 
-from zettabrainskill import __version__
-from zettabrainskill.skills.parser import load_skill
-from zettabrainskill.core.engine import GenerationEngine
-from zettabrainskill.core.models import GenerationRequest
+from zettabrain_skills import __version__
+from zettabrain_skills.skills.parser import load_skill
+from zettabrain_skills.core.engine import GenerationEngine
+from zettabrain_skills.core.models import GenerationRequest
 
 app = typer.Typer(
-    name="zettabrainskill",
+    name="zettabrain-skills",
     help="ZettaBrainSkill - AI-powered document generation with skills",
     add_completion=False,
 )
@@ -197,7 +197,7 @@ def check():
 
     console.print("[blue]🔍 Checking Ollama status...[/blue]")
 
-    from zettabrainskill.llm.providers.ollama import OllamaProvider
+    from zettabrain_skills.llm.providers.ollama import OllamaProvider
 
     provider = OllamaProvider()
 

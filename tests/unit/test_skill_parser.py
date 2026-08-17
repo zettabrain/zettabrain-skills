@@ -4,8 +4,8 @@ Tests for skill parser
 
 import pytest
 from pathlib import Path
-from zettabrainskill.skills.parser import SkillParser, load_skill
-from zettabrainskill.core.models import Skill
+from zettabrain_skills.skills.parser import SkillParser, load_skill
+from zettabrain_skills.core.models import Skill
 
 
 def test_parse_valid_skill(tmp_path):

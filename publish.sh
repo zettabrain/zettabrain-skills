@@ -11,8 +11,8 @@ echo ""
 
 # Check if we're in the right directory
 if [ ! -f "pyproject.toml" ]; then
-    echo "❌ Error: Not in zettabrainskill directory"
-    echo "Please run this script from the zettabrainskill directory"
+    echo "❌ Error: Not in zettabrain-skills directory"
+    echo "Please run this script from the zettabrain-skills directory"
     exit 1
 fi
 
@@ -76,7 +76,7 @@ fi
 # Add remote
 if ! git remote get-url origin > /dev/null 2>&1; then
     echo "🔗 Adding GitHub remote..."
-    git remote add origin https://github.com/zettabrain/zettabrainskill.git
+    git remote add origin https://github.com/zettabrain/zettabrain-skills.git
     echo "✓ Remote added"
 fi
 
@@ -86,7 +86,7 @@ echo ""
 echo "IMPORTANT: Before pushing, make sure:"
 echo "  1. You have created the repository on GitHub:"
 echo "     https://github.com/organizations/zettabrain/repositories/new"
-echo "  2. Repository name: zettabrainskill"
+echo "  2. Repository name: zettabrain-skills"
 echo "  3. Visibility: Public"
 echo "  4. Do NOT initialize with README"
 echo ""
@@ -97,7 +97,7 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo ""
     echo "Please create the repository first:"
     echo "1. Go to: https://github.com/organizations/zettabrain/repositories/new"
-    echo "2. Name: zettabrainskill"
+    echo "2. Name: zettabrain-skills"
     echo "3. Public repository"
     echo "4. Do NOT initialize"
     echo "5. Click 'Create repository'"
@@ -122,15 +122,15 @@ if git push -u origin main; then
     echo "✅ Successfully published to GitHub!"
     echo ""
     echo "🎉 Next steps:"
-    echo "1. View your repository: https://github.com/zettabrain/zettabrainskill"
+    echo "1. View your repository: https://github.com/zettabrain/zettabrain-skills"
     echo "2. Create a release:"
-    echo "   - Go to: https://github.com/zettabrain/zettabrainskill/releases/new"
+    echo "   - Go to: https://github.com/zettabrain/zettabrain-skills/releases/new"
     echo "   - Tag: v0.1.0"
     echo "   - Title: ZettaBrainSkill v0.1.0 - Initial Release"
     echo "   - Click 'Publish release'"
     echo ""
     echo "3. Test installation:"
-    echo "   pipx install git+https://github.com/zettabrain/zettabrainskill.git"
+    echo "   pipx install git+https://github.com/zettabrain/zettabrain-skills.git"
     echo ""
 else
     echo ""

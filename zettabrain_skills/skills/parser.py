@@ -5,7 +5,7 @@ Skill parser - Parse YAML frontmatter + markdown skill files
 import frontmatter
 from pathlib import Path
 from typing import Dict, Any
-from zettabrainskill.core.models import Skill
+from zettabrain_skills.core.models import Skill
 
 
 class SkillParser:

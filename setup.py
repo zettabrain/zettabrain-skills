@@ -10,18 +10,18 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
 setup(
-    name="zettabrainskill",
+    name="zettabrain-skills",
     version="0.1.0",
     author="ZettaBrain",
     author_email="hello@zettabrain.com",
     description="Open-source skill-based document generation platform with AI",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/zettabrain/zettabrainskill",
+    url="https://github.com/zettabrain/zettabrain-skills",
     project_urls={
-        "Bug Tracker": "https://github.com/zettabrain/zettabrainskill/issues",
-        "Documentation": "https://github.com/zettabrain/zettabrainskill",
-        "Source Code": "https://github.com/zettabrain/zettabrainskill",
+        "Bug Tracker": "https://github.com/zettabrain/zettabrain-skills/issues",
+        "Documentation": "https://github.com/zettabrain/zettabrain-skills",
+        "Source Code": "https://github.com/zettabrain/zettabrain-skills",
     },
     packages=find_packages(exclude=["tests", "tests.*", "examples"]),
     classifiers=[
@@ -57,8 +57,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "zbs=zettabrainskill.cli.main:app",
-            "zettabrainskill=zettabrainskill.cli.main:app",
+            "zbs=zettabrain-skills.cli.main:app",
+            "zettabrain-skills=zettabrain-skills.cli.main:app",
         ],
     },
     include_package_data=True,

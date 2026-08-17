@@ -1,6 +1,6 @@
 # Quick Publishing Steps
 
-Execute these commands to publish ZettaBrainSkill to GitHub.
+Execute these commands to publish ZettaBrain Skills to GitHub.
 
 ## Prerequisites Checklist
 
@@ -13,14 +13,14 @@ Execute these commands to publish ZettaBrainSkill to GitHub.
 ### 1. Navigate to Project
 
 ```bash
-cd /Users/olajideshobowale/Documents/ZettaBrain/Business/3rva/zettabrainskill
+cd /Users/olajideshobowale/Documents/ZettaBrain/Business/3rva/zettabrain-skills
 ```
 
 ### 2. Create GitHub Repository
 
 Go to: https://github.com/organizations/zettabrain/repositories/new
 
-- **Name**: `zettabrainskill`
+- **Name**: `zettabrain-skills`
 - **Description**: `Open-source skill-based document generation platform with AI`
 - **Public**: ✓
 - **Do NOT initialize** (we have code)
@@ -51,7 +51,7 @@ git add .
 git status
 
 # Create initial commit
-git commit -m "Initial release: ZettaBrainSkill v0.1.0
+git commit -m "Initial release: ZettaBrain Skills v0.1.0
 
 Core features:
 - Skill parser and validator
@@ -68,7 +68,7 @@ Core features:
 
 ```bash
 # Add remote
-git remote add origin https://github.com/zettabrain/zettabrainskill.git
+git remote add origin https://github.com/zettabrain/zettabrain-skills.git
 
 # Verify remote
 git remote -v
@@ -82,22 +82,22 @@ git push -u origin main
 
 ### 6. Create Release on GitHub
 
-Go to: https://github.com/zettabrain/zettabrainskill/releases/new
+Go to: https://github.com/zettabrain/zettabrain-skills/releases/new
 
 - **Tag**: `v0.1.0`
-- **Title**: `ZettaBrainSkill v0.1.0 - Initial Release`
+- **Title**: `ZettaBrain Skills v0.1.0 - Initial Release`
 - **Description**: Copy from template below
 
 ```markdown
-# ZettaBrainSkill v0.1.0 🎉
+# ZettaBrain Skills v0.1.0 🎉
 
-First public release of ZettaBrainSkill - open-source skill-based document generation platform.
+First public release of ZettaBrain Skills - open-source skill-based document generation platform.
 
 ## Installation
 
 Ubuntu/Debian:
 \`\`\`bash
-pipx install git+https://github.com/zettabrain/zettabrainskill.git
+pipx install git+https://github.com/zettabrain/zettabrain-skills.git
 \`\`\`
 
 See [INSTALL-UBUNTU.md](INSTALL-UBUNTU.md) for details.
@@ -151,7 +151,7 @@ On GitHub Settings page:
 
 ```bash
 # In a new terminal/machine
-pipx install git+https://github.com/zettabrain/zettabrainskill.git
+pipx install git+https://github.com/zettabrain/zettabrain-skills.git
 
 # Verify
 zbs version
@@ -162,7 +162,7 @@ zbs check
 
 After publishing, verify:
 
-- [ ] Repository visible at https://github.com/zettabrain/zettabrainskill
+- [ ] Repository visible at https://github.com/zettabrain/zettabrain-skills
 - [ ] README displays correctly with badges
 - [ ] Installation via pipx works
 - [ ] Examples folder is visible
@@ -177,14 +177,14 @@ After publishing, verify:
 
 ```bash
 git remote remove origin
-git remote add origin https://github.com/zettabrain/zettabrainskill.git
+git remote add origin https://github.com/zettabrain/zettabrain-skills.git
 ```
 
 ### Permission Denied
 
 Use HTTPS instead of SSH:
 ```bash
-git remote set-url origin https://github.com/zettabrain/zettabrainskill.git
+git remote set-url origin https://github.com/zettabrain/zettabrain-skills.git
 ```
 
 ### Unrelated Histories
@@ -205,15 +205,15 @@ git push -u origin main
 
 ```bash
 # Setup and push
-cd /Users/olajideshobowale/Documents/ZettaBrain/Business/3rva/zettabrainskill
+cd /Users/olajideshobowale/Documents/ZettaBrain/Business/3rva/zettabrain-skills
 git add .
-git commit -m "Initial release: ZettaBrainSkill v0.1.0"
-git remote add origin https://github.com/zettabrain/zettabrainskill.git
+git commit -m "Initial release: ZettaBrain Skills v0.1.0"
+git remote add origin https://github.com/zettabrain/zettabrain-skills.git
 git branch -M main
 git push -u origin main
 
 # Test installation
-pipx install git+https://github.com/zettabrain/zettabrainskill.git
+pipx install git+https://github.com/zettabrain/zettabrain-skills.git
 zbs version
 ```
 

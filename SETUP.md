@@ -1,6 +1,6 @@
-# ZettaBrainSkill Setup Guide
+# ZettaBrain Skills Setup Guide
 
-Complete setup instructions to get ZettaBrainSkill running on your machine.
+Complete setup instructions to get ZettaBrain Skills running on your machine.
 
 ## Prerequisites
 
@@ -57,15 +57,15 @@ ollama pull llama3.1:8b
 ollama run llama3.1:8b "Hello, tell me a joke"
 ```
 
-**Note**: Keep `ollama serve` running whenever you use ZettaBrainSkill.
+**Note**: Keep `ollama serve` running whenever you use ZettaBrain Skills.
 
-## Step 4: Install ZettaBrainSkill
+## Step 4: Install ZettaBrain Skills
 
 ### Option A: Using Poetry (Recommended)
 
 ```bash
 # Navigate to project
-cd zettabrainskill
+cd zettabrain-skills
 
 # Install Poetry if not already installed
 curl -sSL https://install.python-poetry.org | python3 -
@@ -84,7 +84,7 @@ zbs version
 
 ```bash
 # Navigate to project
-cd zettabrainskill
+cd zettabrain-skills
 
 # Create virtual environment
 python3.11 -m venv .venv
@@ -102,7 +102,7 @@ zbs version
 ## Step 5: Verify Setup
 
 ```bash
-# Check ZettaBrainSkill version
+# Check ZettaBrain Skills version
 zbs version
 
 # Check Ollama connection
@@ -256,7 +256,7 @@ LOG_LEVEL=INFO
 poetry run pytest
 
 # Run with coverage
-poetry run pytest --cov=zettabrainskill
+poetry run pytest --cov=zettabrain-skills
 
 # Run specific test
 poetry run pytest tests/unit/test_skill_parser.py
@@ -272,13 +272,13 @@ poetry run pytest -v
 poetry install
 
 # Format code
-poetry run black zettabrainskill/
+poetry run black zettabrain-skills/
 
 # Lint code
-poetry run ruff check zettabrainskill/
+poetry run ruff check zettabrain-skills/
 
 # Type check
-poetry run mypy zettabrainskill/
+poetry run mypy zettabrain-skills/
 ```
 
 ## System Requirements

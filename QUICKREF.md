@@ -1,4 +1,4 @@
-# ZettaBrainSkill Quick Reference
+# ZettaBrain Skills Quick Reference
 
 One-page reference for common tasks.
 
@@ -6,15 +6,15 @@ One-page reference for common tasks.
 
 ```bash
 # Ubuntu/Debian (pipx - recommended)
-pipx install git+https://github.com/zettabrain/zettabrainskill.git
+pipx install git+https://github.com/zettabrain/zettabrain-skills.git
 
 # Ubuntu/Debian (pip with venv)
 python3 -m venv zbs-env && source zbs-env/bin/activate
-pip install git+https://github.com/zettabrain/zettabrainskill.git
+pip install git+https://github.com/zettabrain/zettabrain-skills.git
 
 # From source (any OS)
-git clone https://github.com/zettabrain/zettabrainskill.git
-cd zettabrainskill && poetry install && poetry shell
+git clone https://github.com/zettabrain/zettabrain-skills.git
+cd zettabrain-skills && poetry install && poetry shell
 ```
 
 ## Ollama Setup
@@ -170,9 +170,9 @@ poetry run pytest -v            # Verbose
 poetry run pytest --cov         # With coverage
 
 # Code quality
-poetry run black zettabrainskill/
-poetry run ruff check zettabrainskill/
-poetry run mypy zettabrainskill/
+poetry run black zettabrain-skills/
+poetry run ruff check zettabrain-skills/
+poetry run mypy zettabrain-skills/
 
 # Update dependencies
 poetry update
@@ -212,18 +212,18 @@ zbs generate my-skill.md \
 
 ```
 ~/.local/bin/zbs                 # CLI binary (pipx)
-~/.local/pipx/venvs/zettabrainskill/  # pipx venv
+~/.local/pipx/venvs/zettabrain-skills/  # pipx venv
 ~/.ollama/                       # Ollama data
 /usr/local/bin/ollama           # Ollama binary
-~/.config/zettabrainskill/      # Config (future)
+~/.config/zettabrain-skills/      # Config (future)
 ```
 
 ## Python API (Future)
 
 ```python
-from zettabrainskill.skills.parser import load_skill
-from zettabrainskill.core.engine import GenerationEngine
-from zettabrainskill.core.models import GenerationRequest
+from zettabrain-skills.skills.parser import load_skill
+from zettabrain-skills.core.engine import GenerationEngine
+from zettabrain-skills.core.models import GenerationRequest
 
 # Load skill
 skill = load_skill("my-skill.md")
@@ -240,8 +240,8 @@ print(result.content)
 
 ## Links
 
-- **Repo**: https://github.com/zettabrain/zettabrainskill
-- **Issues**: https://github.com/zettabrain/zettabrainskill/issues
+- **Repo**: https://github.com/zettabrain/zettabrain-skills
+- **Issues**: https://github.com/zettabrain/zettabrain-skills/issues
 - **Install Guide**: [INSTALL-UBUNTU.md](INSTALL-UBUNTU.md)
 - **Setup Guide**: [SETUP.md](SETUP.md)
 - **Ollama**: https://ollama.com
@@ -262,4 +262,4 @@ zbs validate my-skill.md
 
 ---
 
-**Quick start**: `pipx install git+https://github.com/zettabrain/zettabrainskill.git && ollama pull llama3.1:8b && zbs check`
+**Quick start**: `pipx install git+https://github.com/zettabrain/zettabrain-skills.git && ollama pull llama3.1:8b && zbs check`

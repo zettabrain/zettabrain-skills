@@ -11,7 +11,7 @@ echo ""
 
 # Check if we're in the right directory
 if [ ! -f "pyproject.toml" ]; then
-    echo "❌ Error: Not in zettabrainskill directory"
+    echo "❌ Error: Not in zettabrain-skills directory"
     exit 1
 fi
 
@@ -66,7 +66,7 @@ Core features:
 - Unit tests with pytest
 
 Installation:
-  pipx install git+https://github.com/zettabrain/zettabrainskill.git
+  pipx install git+https://github.com/zettabrain/zettabrain-skills.git
 
 Ready for production use."
 
@@ -78,7 +78,7 @@ echo "🏗️  Creating GitHub repository..."
 echo ""
 
 # Create repository using gh
-if gh repo create zettabrain/zettabrainskill \
+if gh repo create zettabrain/zettabrain-skills \
     --public \
     --source=. \
     --remote=origin \
@@ -88,12 +88,12 @@ if gh repo create zettabrain/zettabrainskill \
     echo ""
     echo "✅ Repository created and code pushed!"
     echo ""
-    echo "📝 Repository: https://github.com/zettabrain/zettabrainskill"
+    echo "📝 Repository: https://github.com/zettabrain/zettabrain-skills"
     echo ""
 
     # Add topics
     echo "🏷️  Adding repository topics..."
-    gh repo edit zettabrain/zettabrainskill \
+    gh repo edit zettabrain/zettabrain-skills \
         --add-topic=ai \
         --add-topic=llm \
         --add-topic=document-generation \
@@ -118,15 +118,15 @@ First public release of ZettaBrainSkill - open-source skill-based document gener
 
 ### Ubuntu/Debian
 \`\`\`bash
-pipx install git+https://github.com/zettabrain/zettabrainskill.git
+pipx install git+https://github.com/zettabrain/zettabrain-skills.git
 \`\`\`
 
-See [INSTALL-UBUNTU.md](https://github.com/zettabrain/zettabrainskill/blob/main/INSTALL-UBUNTU.md) for detailed instructions.
+See [INSTALL-UBUNTU.md](https://github.com/zettabrain/zettabrain-skills/blob/main/INSTALL-UBUNTU.md) for detailed instructions.
 
 ### From Source
 \`\`\`bash
-git clone https://github.com/zettabrain/zettabrainskill.git
-cd zettabrainskill
+git clone https://github.com/zettabrain/zettabrain-skills.git
+cd zettabrain-skills
 poetry install
 poetry shell
 \`\`\`
@@ -159,10 +159,10 @@ zbs generate examples/simple-summarizer.md --input \"your text here\"
 
 ## Documentation
 
-- [Installation Guide (Ubuntu)](https://github.com/zettabrain/zettabrainskill/blob/main/INSTALL-UBUNTU.md)
-- [Setup Guide](https://github.com/zettabrain/zettabrainskill/blob/main/SETUP.md)
-- [Quick Reference](https://github.com/zettabrain/zettabrainskill/blob/main/QUICKREF.md)
-- [README](https://github.com/zettabrain/zettabrainskill/blob/main/README.md)
+- [Installation Guide (Ubuntu)](https://github.com/zettabrain/zettabrain-skills/blob/main/INSTALL-UBUNTU.md)
+- [Setup Guide](https://github.com/zettabrain/zettabrain-skills/blob/main/SETUP.md)
+- [Quick Reference](https://github.com/zettabrain/zettabrain-skills/blob/main/QUICKREF.md)
+- [README](https://github.com/zettabrain/zettabrain-skills/blob/main/README.md)
 
 ## What's Next
 
@@ -174,23 +174,23 @@ See our roadmap for upcoming features:
 
 ## Links
 
-- 📖 [Documentation](https://github.com/zettabrain/zettabrainskill)
-- 🐛 [Report Issues](https://github.com/zettabrain/zettabrainskill/issues)
-- 💬 [Discussions](https://github.com/zettabrain/zettabrainskill/discussions)"
+- 📖 [Documentation](https://github.com/zettabrain/zettabrain-skills)
+- 🐛 [Report Issues](https://github.com/zettabrain/zettabrain-skills/issues)
+- 💬 [Discussions](https://github.com/zettabrain/zettabrain-skills/discussions)"
 
     echo "✓ Release created"
     echo ""
 
     echo "🎉 SUCCESS! ZettaBrainSkill is now published!"
     echo ""
-    echo "📍 Repository: https://github.com/zettabrain/zettabrainskill"
-    echo "📦 Release: https://github.com/zettabrain/zettabrainskill/releases/tag/v0.1.0"
+    echo "📍 Repository: https://github.com/zettabrain/zettabrain-skills"
+    echo "📦 Release: https://github.com/zettabrain/zettabrain-skills/releases/tag/v0.1.0"
     echo ""
     echo "🧪 Test installation:"
-    echo "  pipx install git+https://github.com/zettabrain/zettabrainskill.git"
+    echo "  pipx install git+https://github.com/zettabrain/zettabrain-skills.git"
     echo ""
     echo "📊 Next steps:"
-    echo "  - View repository: gh repo view zettabrain/zettabrainskill --web"
+    echo "  - View repository: gh repo view zettabrain/zettabrain-skills --web"
     echo "  - Enable Discussions: Settings → Features → Discussions"
     echo "  - Add collaborators: Settings → Collaborators"
     echo ""
@@ -200,12 +200,12 @@ else
     echo "❌ Failed to create repository"
     echo ""
     echo "This might be because:"
-    echo "1. Repository already exists - Check: https://github.com/zettabrain/zettabrainskill"
+    echo "1. Repository already exists - Check: https://github.com/zettabrain/zettabrain-skills"
     echo "2. No permission to create in 'zettabrain' org"
     echo "3. Network issue"
     echo ""
     echo "If repository exists, you can push manually:"
-    echo "  git remote add origin https://github.com/zettabrain/zettabrainskill.git"
+    echo "  git remote add origin https://github.com/zettabrain/zettabrain-skills.git"
     echo "  git branch -M main"
     echo "  git push -u origin main"
     exit 1

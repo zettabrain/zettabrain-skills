@@ -4,7 +4,7 @@ Ollama LLM provider implementation
 
 import httpx
 from typing import Dict, Any, Iterator
-from zettabrainskill.llm.base import LLMProvider
+from zettabrain_skills.llm.base import LLMProvider
 
 
 class OllamaProvider(LLMProvider):

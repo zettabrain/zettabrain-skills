@@ -1,4 +1,4 @@
-# Installing ZettaBrainSkill on Ubuntu
+# Installing ZettaBrain Skills on Ubuntu
 
 Complete installation guide for Ubuntu 20.04, 22.04, and 24.04.
 
@@ -6,7 +6,7 @@ Complete installation guide for Ubuntu 20.04, 22.04, and 24.04.
 
 ```bash
 # Install via pipx (isolated environment)
-pipx install git+https://github.com/zettabrain/zettabrainskill.git
+pipx install git+https://github.com/zettabrain/zettabrain-skills.git
 
 # Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
@@ -63,16 +63,16 @@ source ~/.bashrc
 pipx --version
 ```
 
-### Step 3: Install ZettaBrainSkill
+### Step 3: Install ZettaBrain Skills
 
 #### Option A: Install from GitHub (pipx)
 
 ```bash
 # Install latest version
-pipx install git+https://github.com/zettabrain/zettabrainskill.git
+pipx install git+https://github.com/zettabrain/zettabrain-skills.git
 
 # Or install specific version/branch
-pipx install git+https://github.com/zettabrain/zettabrainskill.git@main
+pipx install git+https://github.com/zettabrain/zettabrain-skills.git@main
 
 # Verify installation
 zbs version
@@ -82,12 +82,12 @@ zbs version
 
 ```bash
 # Install globally (not recommended)
-pip install git+https://github.com/zettabrain/zettabrainskill.git
+pip install git+https://github.com/zettabrain/zettabrain-skills.git
 
 # Or in a virtual environment (recommended)
 python3.11 -m venv zbs-env
 source zbs-env/bin/activate
-pip install git+https://github.com/zettabrain/zettabrainskill.git
+pip install git+https://github.com/zettabrain/zettabrain-skills.git
 
 # Verify
 zbs version
@@ -97,8 +97,8 @@ zbs version
 
 ```bash
 # Clone repository
-git clone https://github.com/zettabrain/zettabrainskill.git
-cd zettabrainskill
+git clone https://github.com/zettabrain/zettabrain-skills.git
+cd zettabrain-skills
 
 # Install Poetry
 curl -sSL https://install.python-poetry.org | python3 -
@@ -107,7 +107,7 @@ curl -sSL https://install.python-poetry.org | python3 -
 export PATH="$HOME/.local/bin:$PATH"
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 
-# Install dependencies and ZettaBrainSkill
+# Install dependencies and ZettaBrain Skills
 poetry install
 
 # Activate environment
@@ -160,7 +160,7 @@ ollama pull llama3.1:70b        # ~40GB, needs GPU
 ### Step 6: Verify Installation
 
 ```bash
-# Check ZettaBrainSkill version
+# Check ZettaBrain Skills version
 zbs version
 
 # Check Ollama connection
@@ -290,17 +290,17 @@ htop  # or top
 # Install CUDA toolkit: https://developer.nvidia.com/cuda-downloads
 ```
 
-## Updating ZettaBrainSkill
+## Updating ZettaBrain Skills
 
 ### Update via pipx
 
 ```bash
 # Update to latest version
-pipx upgrade zettabrainskill
+pipx upgrade zettabrain-skills
 
 # Or reinstall
-pipx uninstall zettabrainskill
-pipx install git+https://github.com/zettabrain/zettabrainskill.git
+pipx uninstall zettabrain-skills
+pipx install git+https://github.com/zettabrain/zettabrain-skills.git
 ```
 
 ### Update via pip
@@ -308,13 +308,13 @@ pipx install git+https://github.com/zettabrain/zettabrainskill.git
 ```bash
 # If using venv
 source zbs-env/bin/activate
-pip install --upgrade git+https://github.com/zettabrain/zettabrainskill.git
+pip install --upgrade git+https://github.com/zettabrain/zettabrain-skills.git
 ```
 
 ### Update from source
 
 ```bash
-cd zettabrainskill
+cd zettabrain-skills
 git pull
 poetry install
 ```
@@ -324,13 +324,13 @@ poetry install
 ### Remove via pipx
 
 ```bash
-pipx uninstall zettabrainskill
+pipx uninstall zettabrain-skills
 ```
 
 ### Remove via pip
 
 ```bash
-pip uninstall zettabrainskill
+pip uninstall zettabrain-skills
 ```
 
 ### Remove Ollama
@@ -359,8 +359,8 @@ sudo systemctl daemon-reload
 export OLLAMA_BASE_URL=http://your-server:11434
 
 # Or create config file
-mkdir -p ~/.config/zettabrainskill
-cat > ~/.config/zettabrainskill/config.yaml << EOF
+mkdir -p ~/.config/zettabrain-skills
+cat > ~/.config/zettabrain-skills/config.yaml << EOF
 ollama:
   base_url: http://your-server:11434
   model: llama3.1:8b
@@ -380,7 +380,7 @@ Environment="OLLAMA_HOST=0.0.0.0:8080"
 # Restart
 sudo systemctl restart ollama
 
-# Update ZettaBrainSkill config
+# Update ZettaBrain Skills config
 export OLLAMA_BASE_URL=http://localhost:8080
 ```
 
@@ -407,13 +407,13 @@ ollama pull llama3.1:70b
 
 ## System Service Setup (Optional)
 
-Run ZettaBrainSkill as a service for API mode (future feature):
+Run ZettaBrain Skills as a service for API mode (future feature):
 
 ```bash
 # Create service file
-sudo tee /etc/systemd/system/zettabrainskill.service << EOF
+sudo tee /etc/systemd/system/zettabrain-skills.service << EOF
 [Unit]
-Description=ZettaBrainSkill API Server
+Description=ZettaBrain Skills API Server
 After=network.target ollama.service
 
 [Service]
@@ -429,18 +429,18 @@ EOF
 
 # Enable and start
 sudo systemctl daemon-reload
-sudo systemctl enable zettabrainskill
-sudo systemctl start zettabrainskill
+sudo systemctl enable zettabrain-skills
+sudo systemctl start zettabrain-skills
 ```
 
 ## Quick Reference
 
 ```bash
 # Installation
-pipx install git+https://github.com/zettabrain/zettabrainskill.git
+pipx install git+https://github.com/zettabrain/zettabrain-skills.git
 
 # Update
-pipx upgrade zettabrainskill
+pipx upgrade zettabrain-skills
 
 # Commands
 zbs version                           # Show version
@@ -458,8 +458,8 @@ systemctl status ollama               # Check service status
 
 ## Getting Help
 
-- **Documentation**: https://github.com/zettabrain/zettabrainskill
-- **Issues**: https://github.com/zettabrain/zettabrainskill/issues
+- **Documentation**: https://github.com/zettabrain/zettabrain-skills
+- **Issues**: https://github.com/zettabrain/zettabrain-skills/issues
 - **Email**: support@zettabrain.com
 
 ## Next Steps
