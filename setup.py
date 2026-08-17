@@ -37,7 +37,7 @@ setup(
     python_requires=">=3.11",
     install_requires=[
         "fastapi>=0.104.0",
-        "typer[all]>=0.9.0",
+        "typer[all]>=0.12.0",
         "pydantic>=2.5.0",
         "pyyaml>=6.0",
         "httpx>=0.25.2",
