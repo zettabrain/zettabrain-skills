@@ -31,16 +31,12 @@ def version():
 
 @app.command()
 def generate(
-    skill_file: str = typer.Argument(..., help="Path to skill file (.md)"),
-    input_text: str = typer.Option(..., "--input", "-i", help="Input text for generation"),
-    output_file: Optional[str] = typer.Option(None, "--output", "-o", help="Output file path"),
-    temperature: Optional[float] = typer.Option(
-        None, "--temperature", "-t", help="Override skill temperature"
-    ),
-    max_tokens: Optional[int] = typer.Option(
-        None, "--max-tokens", "-m", help="Override skill max_tokens"
-    ),
-    business_id: str = typer.Option("default", "--business", "-b", help="Business ID"),
+    skill_file: str,
+    input: str = typer.Option(..., "--input", "-i"),
+    output: Optional[str] = typer.Option(None, "--output", "-o"),
+    temperature: Optional[float] = typer.Option(None, "--temperature", "-t"),
+    max_tokens: Optional[int] = typer.Option(None, "--max-tokens", "-m"),
+    business: str = typer.Option("default", "--business", "-b"),
 ):
     """Generate a document using a skill"""
 
@@ -78,9 +74,9 @@ def generate(
         # Generate
         console.print("[blue]⚙️  Generating document...[/blue]")
         request = GenerationRequest(
-            input=input_text,
+            input=input,
             skill_name=skill.name,
-            business_id=business_id,
+            business_id=business,
             temperature=temperature,
             max_tokens=max_tokens,
         )
@@ -112,9 +108,9 @@ def generate(
         console.print()
 
         # Save to file if requested
-        if output_file:
-            Path(output_file).write_text(result.content, encoding="utf-8")
-            console.print(f"[green]✓[/green] Saved to [bold]{output_file}[/bold]")
+        if output:
+            Path(output).write_text(result.content, encoding="utf-8")
+            console.print(f"[green]✓[/green] Saved to [bold]{output}[/bold]")
         else:
             console.print(
                 "[dim]Tip: Use --output/-o to save to a file[/dim]"
@@ -139,7 +135,7 @@ def generate(
 
 @app.command()
 def validate(
-    skill_file: str = typer.Argument(..., help="Path to skill file to validate"),
+    skill_file: str,
 ):
     """Validate a skill file"""
 
