@@ -1,0 +1,10 @@
+include README.md
+include LICENSE
+include SETUP.md
+include INSTALL-UBUNTU.md
+include pyproject.toml
+include .env.example
+recursive-include examples *.md
+recursive-include zettabrainskill *.py
+prune tests
+prune .git
