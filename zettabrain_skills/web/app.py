@@ -13,6 +13,7 @@ import markdown
 from typing import Optional
 from weasyprint import HTML, CSS
 from io import BytesIO
+from datetime import datetime, timedelta
 
 from zettabrain_skills.skills.parser import load_skill
 from zettabrain_skills.core.engine import GenerationEngine
@@ -86,8 +87,20 @@ async def generate_quote(
                 }
             )
 
-        # Build enhanced request with customer details
-        enhanced_request = customer_request
+        # Get current date
+        today = datetime.now()
+        valid_until = today + timedelta(days=7)
+        date_str = today.strftime("%B %d, %Y")
+        valid_until_str = valid_until.strftime("%B %d, %Y")
+        quote_date_code = today.strftime("%Y%m%d")
+
+        # Build enhanced request with customer details and CURRENT DATE
+        enhanced_request = f"""TODAY'S DATE: {date_str}
+VALID UNTIL DATE: {valid_until_str}
+QUOTE NUMBER FORMAT: 3RVA-{quote_date_code}-XXX (use random 3 digits for XXX)
+
+{customer_request}"""
+
         if customer_name:
             enhanced_request = f"Customer: {customer_name}\n{enhanced_request}"
         if customer_email:
