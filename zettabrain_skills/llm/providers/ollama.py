@@ -3,6 +3,7 @@ Ollama LLM provider implementation
 """
 
 import httpx
+import os
 from typing import Dict, Any, Iterator
 from zettabrain_skills.llm.base import LLMProvider
 
@@ -11,19 +12,19 @@ class OllamaProvider(LLMProvider):
     """Ollama LLM provider for local model inference"""
 
     def __init__(
-        self, base_url: str = "http://localhost:11434", model: str = "llama3.1:8b", timeout: int = 300
+        self, base_url: str = "http://localhost:11434", model: str = "llama3.1:8b", timeout: int = 600
     ):
         """
         Initialize Ollama provider
 
         Args:
-            base_url: Ollama server URL
-            model: Model name (e.g., 'llama3.1:8b', 'mistral:7b')
-            timeout: Request timeout in seconds
+            base_url: Ollama server URL (can be set via OLLAMA_BASE_URL env var)
+            model: Model name (e.g., 'llama3.1:8b', 'mistral:7b') (can be set via OLLAMA_MODEL env var)
+            timeout: Request timeout in seconds (can be set via OLLAMA_TIMEOUT env var)
         """
-        self.base_url = base_url.rstrip("/")
-        self.model = model
-        self.timeout = timeout
+        self.base_url = os.getenv("OLLAMA_BASE_URL", base_url).rstrip("/")
+        self.model = os.getenv("OLLAMA_MODEL", model)
+        self.timeout = int(os.getenv("OLLAMA_TIMEOUT", str(timeout)))
 
     def generate(
         self, prompt: str, temperature: float = 0.7, max_tokens: int = 2000, **kwargs
