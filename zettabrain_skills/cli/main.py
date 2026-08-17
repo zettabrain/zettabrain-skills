@@ -13,6 +13,7 @@ from zettabrain_skills import __version__
 from zettabrain_skills.skills.parser import load_skill
 from zettabrain_skills.core.engine import GenerationEngine
 from zettabrain_skills.core.models import GenerationRequest
+from zettabrain_skills.discovery.parser import DiscoveryParser
 
 console = Console()
 
@@ -206,6 +207,79 @@ def check():
         console.print("\n[yellow]Make sure Ollama is running:[/yellow]")
         console.print("  1. Start Ollama: ollama serve")
         console.print("  2. Pull a model: ollama pull llama3.1:8b")
+        raise click.Abort()
+
+
+@app.group()
+def discovery():
+    """Discovery document processing commands"""
+    pass
+
+
+@discovery.command('parse')
+@click.argument('document_path', type=click.Path(exists=True))
+@click.option('--output', '-o', 'output_file', type=click.Path(), help='Output JSON file path')
+@click.option('--ollama-url', default='http://localhost:11434', help='Ollama API URL')
+@click.option('--model', default='llama3.1:8b', help='LLM model to use')
+@click.option('--timeout', default=300, help='Request timeout in seconds')
+def parse_discovery(document_path, output_file, ollama_url, model, timeout):
+    """Parse a discovery document and extract business information"""
+
+    try:
+        parser = DiscoveryParser(
+            ollama_url=ollama_url,
+            model=model,
+            timeout=timeout
+        )
+
+        doc_path = Path(document_path)
+        business_info = parser.parse_document(doc_path)
+
+        # Display results
+        console.print()
+        console.print(Panel(
+            business_info.to_skill_context(),
+            title=f"📋 Business Info: {business_info.company_name}",
+            border_style="cyan"
+        ))
+
+        # Save if output specified
+        if output_file:
+            output_path = Path(output_file)
+        else:
+            output_path = doc_path.parent / f"{doc_path.stem}-info.json"
+
+        parser.save_business_info(business_info, output_path)
+        console.print(f"\n[green]✓[/green] Business info saved to [bold]{output_path}[/bold]")
+
+        # Show extraction notes if any
+        if business_info.extraction_notes:
+            console.print("\n[yellow]Notes:[/yellow]")
+            for note in business_info.extraction_notes:
+                console.print(f"  • {note}")
+
+    except Exception as e:
+        console.print(f"[red]✗ Error parsing discovery document: {e}[/red]")
+        raise click.Abort()
+
+
+@discovery.command('info')
+@click.argument('info_path', type=click.Path(exists=True))
+def show_discovery_info(info_path):
+    """Display extracted business information"""
+
+    try:
+        parser = DiscoveryParser()
+        business_info = parser.load_business_info(Path(info_path))
+
+        console.print(Panel(
+            business_info.to_skill_context(),
+            title=f"📋 Business Info: {business_info.company_name}",
+            border_style="cyan"
+        ))
+
+    except Exception as e:
+        console.print(f"[red]✗ Error loading business info: {e}[/red]")
         raise click.Abort()
 
 

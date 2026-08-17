@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 from zettabrain_skills.skills.parser import load_skill
 from zettabrain_skills.core.engine import GenerationEngine
 from zettabrain_skills.core.models import GenerationRequest
+from zettabrain_skills.discovery.parser import DiscoveryParser
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -35,6 +36,19 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 
 # Store generated quotes in memory (for demo)
 generated_quotes = []
+
+# Load business context from discovery document (if exists)
+BUSINESS_CONTEXT = None
+discovery_path = Path("examples/discovery-documents/3rva-discovery.md")
+if discovery_path.exists():
+    try:
+        parser = DiscoveryParser()
+        business_info = parser.parse_document(discovery_path)
+        BUSINESS_CONTEXT = business_info.to_skill_context()
+        print(f"✓ Loaded business context for {business_info.company_name}")
+    except Exception as e:
+        print(f"Warning: Could not load discovery document: {e}")
+        BUSINESS_CONTEXT = None
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -94,19 +108,32 @@ async def generate_quote(
         valid_until_str = valid_until.strftime("%B %d, %Y")
         quote_date_code = today.strftime("%Y%m%d")
 
-        # Build enhanced request with customer details and CURRENT DATE
-        enhanced_request = f"""TODAY'S DATE: {date_str}
+        # Build enhanced request with customer details, current date, and business context
+        enhanced_parts = []
+
+        # Add business context if available
+        if BUSINESS_CONTEXT:
+            enhanced_parts.append(BUSINESS_CONTEXT)
+            enhanced_parts.append("\n---\n")
+
+        # Add date information
+        enhanced_parts.append(f"""TODAY'S DATE: {date_str}
 VALID UNTIL DATE: {valid_until_str}
 QUOTE NUMBER FORMAT: 3RVA-{quote_date_code}-XXX (use random 3 digits for XXX)
+""")
 
-{customer_request}"""
-
+        # Add customer information
         if customer_name:
-            enhanced_request = f"Customer: {customer_name}\n{enhanced_request}"
+            enhanced_parts.append(f"Customer: {customer_name}\n")
         if customer_email:
-            enhanced_request = f"{enhanced_request}\nEmail: {customer_email}"
+            enhanced_parts.append(f"Email: {customer_email}\n")
         if customer_phone:
-            enhanced_request = f"{enhanced_request}\nPhone: {customer_phone}"
+            enhanced_parts.append(f"Phone: {customer_phone}\n")
+
+        # Add customer request
+        enhanced_parts.append(f"\nCustomer Request:\n{customer_request}")
+
+        enhanced_request = "".join(enhanced_parts)
 
         # Generate quote
         gen_request = GenerationRequest(
