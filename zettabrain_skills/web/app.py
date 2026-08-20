@@ -344,6 +344,17 @@ async def api_document_pdf(doc_id: str):
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
+    def sanitize(text: str) -> str:
+        replacements = {
+            "•": "-", "’": "'", "‘": "'",
+            "“": '"', "”": '"', "–": "-",
+            "—": "--", "…": "...", " ": " ",
+            "‐": "-", "‑": "-", "‒": "-",
+        }
+        for k, v in replacements.items():
+            text = text.replace(k, v)
+        return text.encode("latin-1", errors="replace").decode("latin-1")
+
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
@@ -354,7 +365,7 @@ async def api_document_pdf(doc_id: str):
     pdf.cell(0, 12, "ZettaBrain Skills", ln=True, align="C")
     pdf.set_font("Helvetica", "I", 11)
     pdf.set_text_color(136, 136, 136)
-    pdf.cell(0, 8, doc.get("skill_display", "Document"), ln=True, align="C")
+    pdf.cell(0, 8, sanitize(doc.get("skill_display", "Document")), ln=True, align="C")
     pdf.ln(4)
     pdf.set_draw_color(99, 102, 241)
     pdf.set_line_width(0.8)
@@ -375,7 +386,7 @@ async def api_document_pdf(doc_id: str):
     pdf.cell(22, 6, "Customer:")
     pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(51, 51, 51)
-    pdf.cell(0, 6, doc.get("customer_name", ""), ln=True)
+    pdf.cell(0, 6, sanitize(doc.get("customer_name", "")), ln=True)
 
     pdf.set_x(14)
     pdf.set_font("Helvetica", "B", 10)
@@ -402,28 +413,28 @@ async def api_document_pdf(doc_id: str):
             pdf.ln(3)
             pdf.set_font("Helvetica", "B", 12)
             pdf.set_x(left_margin)
-            pdf.multi_cell(0, 6, line[4:])
+            pdf.multi_cell(0, 6, sanitize(line[4:]))
             pdf.ln(1)
         elif line.startswith("## "):
             pdf.ln(4)
             pdf.set_font("Helvetica", "B", 13)
             pdf.set_x(left_margin)
-            pdf.multi_cell(0, 7, line[3:])
+            pdf.multi_cell(0, 7, sanitize(line[3:]))
             pdf.ln(1)
         elif line.startswith("# "):
             pdf.ln(5)
             pdf.set_font("Helvetica", "B", 15)
             pdf.set_x(left_margin)
-            pdf.multi_cell(0, 8, line[2:])
+            pdf.multi_cell(0, 8, sanitize(line[2:]))
             pdf.ln(2)
         elif line.startswith("- ") or line.startswith("* "):
             pdf.set_font("Helvetica", "", 10)
             pdf.set_x(left_margin + 6)
-            pdf.multi_cell(0, 5, "• " + line[2:])
+            pdf.multi_cell(0, 5, "- " + sanitize(line[2:]))
         elif line.strip().startswith("|") and "|" in line[1:]:
             pdf.set_font("Helvetica", "", 9)
             pdf.set_x(left_margin)
-            pdf.multi_cell(0, 5, line.strip())
+            pdf.multi_cell(0, 5, sanitize(line.strip()))
         elif line.strip() == "":
             pdf.ln(3)
         else:
@@ -431,7 +442,7 @@ async def api_document_pdf(doc_id: str):
             if clean:
                 pdf.set_font("Helvetica", "", 10)
                 pdf.set_x(left_margin)
-                pdf.multi_cell(0, 5, clean)
+                pdf.multi_cell(0, 5, sanitize(clean))
 
     # Citations
     if doc.get("citations"):
@@ -447,7 +458,7 @@ async def api_document_pdf(doc_id: str):
         pdf.set_text_color(80, 80, 80)
         for citation in doc["citations"]:
             pdf.set_x(left_margin + 4)
-            pdf.multi_cell(0, 5, "• " + citation)
+            pdf.multi_cell(0, 5, "- " + sanitize(citation))
 
     # Footer
     pdf.ln(10)
