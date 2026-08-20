@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZettaBrain Skills</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #0f1117;
+    --bg2:     #161b27;
+    --bg3:     #1e2535;
+    --border:  #2a3347;
+    --accent:  #6366f1;
+    --accent2: #818cf8;
+    --green:   #22c55e;
+    --red:     #ef4444;
+    --yellow:  #f59e0b;
+    --text:    #e2e8f0;
+    --text2:   #94a3b8;
+    --text3:   #475569;
+    --radius:  10px;
+    --shadow:  0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  html, body { height: 100%; font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+  /* Layout */
+  .app      { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar  { width: 280px; min-width: 280px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .main     { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar   { height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 12px; flex-shrink: 0; }
+
+  /* Sidebar */
+  .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
+  .logo { font-size: 18px; font-weight: 700; color: var(--accent2); }
+  .logo-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
+  .sidebar-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 10px; }
+
+  .status-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; }
+  .status-label { color: var(--text2); font-size: 13px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot.green  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot.red    { background: var(--red); }
+  .dot.yellow { background: var(--yellow); }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .stat-card { background: var(--bg3); border-radius: var(--radius); padding: 10px 12px; }
+  .stat-val { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .stat-lbl { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+  /* Skill list */
+  .skill-list { list-style: none; display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; }
+  .skill-item { font-size: 12px; color: var(--text2); padding: 8px 10px; background: var(--bg3); border-radius: 6px; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
+  .skill-item:hover { border-color: var(--accent); color: var(--text); }
+  .skill-item.active { border-color: var(--accent); background: rgba(99,102,241,0.1); color: var(--text); }
+  .skill-item .skill-name { font-weight: 600; }
+  .skill-item .skill-desc { font-size: 11px; color: var(--text3); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 7px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #4f46e5; }
+  .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover:not(:disabled) { background: var(--border); color: var(--text); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-full { width: 100%; justify-content: center; }
+
+  /* Topbar */
+  .topbar-title { font-size: 15px; font-weight: 600; flex: 1; }
+  .tab-btn { background: none; border: none; color: var(--text2); padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .tab-btn.active, .tab-btn:hover { background: var(--bg3); color: var(--text); }
+
+  /* Panels */
+  .panel { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+  .panel.active { display: flex; }
+  .panel-content { flex: 1; overflow-y: auto; padding: 24px; }
+  .panel-section { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .panel-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+
+  /* Generate panel */
+  .gen-area { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .gen-input { padding: 16px 20px; background: var(--bg2); border-top: 1px solid var(--border); flex-shrink: 0; }
+
+  .input-field { width: 100%; background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 13px; outline: none; font-family: inherit; resize: none; }
+  .input-field:focus { border-color: var(--accent); }
+
+  .input-wrap { display: flex; gap: 10px; align-items: flex-end; }
+  .input-wrap textarea { flex: 1; min-height: 60px; max-height: 200px; }
+
+  .form-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .form-row .input-field { flex: 1; }
+
+  /* Result display */
+  .result-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; animation: fadeUp 0.2s ease; }
+  .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .result-meta { font-size: 11px; color: var(--text3); }
+  .result-content { font-size: 13px; line-height: 1.8; white-space: pre-wrap; }
+  .result-citations { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .citation-chip { display: inline-block; background: var(--bg2); border: 1px solid var(--border); color: var(--text2); padding: 3px 9px; border-radius: 20px; font-size: 11px; margin: 3px 4px 3px 0; }
+
+  /* Streaming cursor */
+  .cursor { display: inline-block; width: 2px; height: 14px; background: var(--accent); margin-left: 2px; animation: blink 0.8s infinite; vertical-align: middle; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+  @keyframes fadeUp { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* Welcome */
+  .welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center; padding: 40px; gap: 16px; color: var(--text2); }
+  .welcome h2 { font-size: 20px; font-weight: 700; color: var(--text); }
+  .welcome p { max-width: 420px; line-height: 1.7; }
+
+  /* Toast */
+  .toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 200; }
+  .toast { background: var(--bg2); border: 1px solid var(--border); padding: 12px 16px; border-radius: 8px; font-size: 13px; box-shadow: var(--shadow); animation: fadeUp 0.2s ease; }
+  .toast.success { border-color: var(--green); }
+  .toast.error { border-color: var(--red); }
+
+  /* Spinner */
+  .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* History */
+  .history-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s; }
+  .history-item:hover { border-color: var(--accent); }
+  .history-item .hi-title { font-weight: 600; font-size: 13px; }
+  .history-item .hi-meta { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* Responsive */
+  @media (max-width: 640px) { .sidebar { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">ZettaBrain Skills</div>
+      <div class="logo-sub">AI Document Generation</div>
+    </div>
+
+    <!-- Status -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">System Status</div>
+      <div class="status-row">
+        <span class="status-label">LLM Provider</span>
+        <div class="dot" id="dot-llm"></div>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Corpus</span>
+        <div class="dot" id="dot-corpus"></div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Overview</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-val" id="stat-skills">-</div>
+          <div class="stat-lbl">Skills</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-corpus">-</div>
+          <div class="stat-lbl">Corpus</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-docs">-</div>
+          <div class="stat-lbl">Generated</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skills -->
+    <div class="sidebar-section" style="flex:1; overflow:hidden; display:flex; flex-direction:column;">
+      <div class="sidebar-label">Available Skills</div>
+      <ul class="skill-list" id="skill-list">
+        <li style="color:var(--text3); padding:8px;">Loading...</li>
+      </ul>
+    </div>
+
+    <div style="padding:12px; border-top:1px solid var(--border);">
+      <button class="btn btn-ghost btn-full btn-sm" onclick="refreshStatus()">Refresh</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Generate</div>
+      <div>
+        <button class="tab-btn active" id="tab-generate" onclick="switchTab('generate')">Generate</button>
+        <button class="tab-btn" id="tab-history" onclick="switchTab('history')">History</button>
+        <button class="tab-btn" id="tab-corpus" onclick="switchTab('corpus')">Corpus</button>
+      </div>
+    </div>
+
+    <!-- GENERATE PANEL -->
+    <div class="panel active" id="panel-generate">
+      <div class="gen-area" id="gen-area">
+        <div class="welcome" id="welcome">
+          <h2>Generate Documents with AI</h2>
+          <p>Select a skill from the sidebar, describe what you need, and get a professional document in seconds.</p>
+        </div>
+      </div>
+      <div class="gen-input">
+        <div id="selected-skill-info" style="display:none; margin-bottom:12px; padding:10px; background:var(--bg3); border-radius:8px; border:1px solid var(--accent);">
+          <span style="font-size:12px; color:var(--accent); font-weight:600;" id="selected-skill-name"></span>
+        </div>
+        <div class="form-row">
+          <input class="input-field" id="input-name" placeholder="Customer name (optional)" />
+          <input class="input-field" id="input-email" placeholder="Email (optional)" />
+        </div>
+        <div class="input-wrap">
+          <textarea class="input-field" id="input-text" placeholder="Describe what document you need..." onkeydown="handleKey(event)"></textarea>
+          <button class="btn btn-primary" id="send-btn" onclick="generate()" style="height:60px; padding:0 20px;">Generate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY PANEL -->
+    <div class="panel" id="panel-history">
+      <div class="panel-content" id="history-list"></div>
+    </div>
+
+    <!-- CORPUS PANEL -->
+    <div class="panel" id="panel-corpus">
+      <div class="panel-content">
+        <div class="panel-section">
+          <h3>Corpus Status</h3>
+          <div id="corpus-info" style="color:var(--text2); font-size:13px;">Loading...</div>
+        </div>
+        <div class="panel-section">
+          <h3>Search Corpus</h3>
+          <div class="input-wrap" style="margin-bottom:12px;">
+            <input class="input-field" id="corpus-query" placeholder="Search your corpus..." />
+            <button class="btn btn-primary" onclick="searchCorpus()">Search</button>
+          </div>
+          <div id="corpus-results"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+// State
+let ws = null;
+let skills = [];
+let selectedSkill = null;
+let isGenerating = false;
+let currentAnswer = '';
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  refreshStatus();
+  connectWS();
+  setInterval(refreshStatus, 30000);
+});
+
+// WebSocket
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws/generate`);
+  ws.onmessage = (e) => handleWSMessage(JSON.parse(e.data));
+  ws.onclose = () => setTimeout(connectWS, 3000);
+  ws.onerror = () => ws.close();
+}
+
+function handleWSMessage(data) {
+  if (data.type === 'status') {
+    // generation started
+  } else if (data.type === 'token') {
+    appendToken(data.token);
+  } else if (data.type === 'citations') {
+    // citations received before generation
+  } else if (data.type === 'done') {
+    finishGeneration(data);
+  } else if (data.type === 'error') {
+    finishGeneration(null);
+    toast(data.message, 'error');
+  }
+}
+
+// Status
+async function refreshStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const s = await r.json();
+
+    setDot('dot-llm', s.llm.healthy ? 'green' : 'red');
+    setDot('dot-corpus', s.corpus.chunks > 0 ? 'green' : s.corpus.documents > 0 ? 'yellow' : 'red');
+
+    document.getElementById('stat-skills').textContent = s.skills.count;
+    document.getElementById('stat-corpus').textContent = s.corpus.chunks;
+    document.getElementById('stat-docs').textContent = s.documents_generated;
+
+    // Load skills
+    const sr = await fetch('/api/skills');
+    skills = await sr.json();
+    renderSkillList();
+  } catch(e) {
+    setDot('dot-llm', 'red');
+  }
+}
+
+function setDot(id, cls) {
+  document.getElementById(id).className = 'dot ' + cls;
+}
+
+function renderSkillList() {
+  const list = document.getElementById('skill-list');
+  if (skills.length === 0) {
+    list.innerHTML = '<li style="color:var(--text3); padding:8px;">No skills found</li>';
+    return;
+  }
+  list.innerHTML = skills.map((s, i) => `
+    <li class="skill-item ${selectedSkill && selectedSkill.file === s.file ? 'active' : ''}" onclick="selectSkill(${i})">
+      <div class="skill-name">${s.display_name}</div>
+      <div class="skill-desc">${s.description}</div>
+    </li>
+  `).join('');
+}
+
+function selectSkill(idx) {
+  selectedSkill = skills[idx];
+  renderSkillList();
+  document.getElementById('selected-skill-info').style.display = 'block';
+  document.getElementById('selected-skill-name').textContent = selectedSkill.display_name + ' v' + selectedSkill.version;
+  document.getElementById('input-text').focus();
+}
+
+// Generate
+function handleKey(e) {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    generate();
+  }
+}
+
+async function generate() {
+  const inputText = document.getElementById('input-text').value.trim();
+  if (!inputText || isGenerating) return;
+  if (!selectedSkill) { toast('Select a skill first', 'error'); return; }
+
+  isGenerating = true;
+  currentAnswer = '';
+  setGenerating(true);
+
+  // Hide welcome
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.style.display = 'none';
+
+  // Create result card
+  const area = document.getElementById('gen-area');
+  const card = document.createElement('div');
+  card.className = 'result-card';
+  card.id = 'current-result';
+  card.innerHTML = `
+    <div class="result-header">
+      <span style="font-weight:600; font-size:13px;">${selectedSkill.display_name}</span>
+      <span class="result-meta" id="result-meta"><div class="spinner"></div></span>
+    </div>
+    <div class="result-content" id="result-content"><span class="cursor"></span></div>
+  `;
+  area.appendChild(card);
+  area.scrollTop = area.scrollHeight;
+
+  // Send via WebSocket if available, else REST fallback
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      skill_file: selectedSkill.file,
+      input_text: inputText,
+      customer_name: document.getElementById('input-name').value.trim(),
+    }));
+  } else {
+    try {
+      const r = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          skill_file: selectedSkill.file,
+          input_text: inputText,
+          customer_name: document.getElementById('input-name').value.trim(),
+          customer_email: document.getElementById('input-email').value.trim(),
+        })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || 'Generation failed');
+      currentAnswer = data.content;
+      finishGeneration(data);
+    } catch(e) {
+      finishGeneration(null);
+      toast(e.message, 'error');
+    }
+  }
+}
+
+function appendToken(token) {
+  currentAnswer += token;
+  const el = document.getElementById('result-content');
+  if (!el) return;
+  el.innerHTML = escapeHtml(currentAnswer) + '<span class="cursor"></span>';
+  const area = document.getElementById('gen-area');
+  area.scrollTop = area.scrollHeight;
+}
+
+function finishGeneration(data) {
+  isGenerating = false;
+  setGenerating(false);
+
+  const el = document.getElementById('result-content');
+  if (el) {
+    el.innerHTML = mdToHtml(currentAnswer);
+  }
+
+  const meta = document.getElementById('result-meta');
+  if (meta && data) {
+    const timeStr = data.generation_time_ms >= 1000
+      ? (data.generation_time_ms / 1000).toFixed(1) + 's'
+      : data.generation_time_ms + 'ms';
+    meta.innerHTML = `${data.model || ''} &middot; ${timeStr}`;
+
+    if (data.citations && data.citations.length > 0) {
+      const card = document.getElementById('current-result');
+      const citDiv = document.createElement('div');
+      citDiv.className = 'result-citations';
+      citDiv.innerHTML = '<div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:600;">Sources</div>' +
+        data.citations.map(c => `<span class="citation-chip">${c}</span>`).join('');
+      card.appendChild(citDiv);
+    }
+  }
+
+  // Remove id so next generation gets a fresh card
+  const card = document.getElementById('current-result');
+  if (card) card.removeAttribute('id');
+
+  document.getElementById('input-text').value = '';
+  currentAnswer = '';
+  refreshStatus();
+}
+
+function setGenerating(active) {
+  const btn = document.getElementById('send-btn');
+  btn.disabled = active;
+  btn.innerHTML = active ? '<div class="spinner"></div>' : 'Generate';
+}
+
+// History
+async function loadHistory() {
+  const r = await fetch('/api/documents');
+  const docs = await r.json();
+  const list = document.getElementById('history-list');
+
+  if (docs.length === 0) {
+    list.innerHTML = '<p style="color:var(--text3); padding:20px;">No documents generated yet.</p>';
+    return;
+  }
+
+  list.innerHTML = docs.map(d => `
+    <div class="history-item" onclick="viewDocument('${d.id}')">
+      <div class="hi-title">${d.skill_display || d.skill_name}</div>
+      <div class="hi-meta">${d.customer_name} &middot; ${d.created_at} &middot; ${d.generation_time_ms ? (d.generation_time_ms/1000).toFixed(1)+'s' : ''}</div>
+    </div>
+  `).join('');
+}
+
+async function viewDocument(id) {
+  const r = await fetch(`/api/documents/${id}`);
+  const doc = await r.json();
+
+  const list = document.getElementById('history-list');
+  list.innerHTML = `
+    <button class="btn btn-ghost btn-sm" onclick="loadHistory()" style="margin-bottom:16px;">Back</button>
+    <div class="result-card">
+      <div class="result-header">
+        <span style="font-weight:600;">${doc.skill_display || doc.skill_name}</span>
+        <a href="/api/documents/${doc.id}/pdf" class="btn btn-ghost btn-sm">Download PDF</a>
+      </div>
+      <div class="result-content">${mdToHtml(doc.content)}</div>
+      ${doc.citations && doc.citations.length > 0 ? `
+        <div class="result-citations">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:600;">Sources</div>
+          ${doc.citations.map(c => `<span class="citation-chip">${c}</span>`).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+// Corpus
+async function loadCorpus() {
+  try {
+    const r = await fetch('/api/corpus/status');
+    const data = await r.json();
+    const info = document.getElementById('corpus-info');
+
+    if (!data.configured) {
+      info.innerHTML = 'No corpus configured. Run <code>zbs corpus ingest ./docs/</code> to add documents.';
+      return;
+    }
+
+    info.innerHTML = `
+      <div style="margin-bottom:12px;">${data.documents} document(s), ${data.chunks} chunks indexed</div>
+      ${data.document_list ? data.document_list.map(d =>
+        `<div style="padding:6px 0; border-bottom:1px solid var(--border); font-size:12px;">
+          <strong>${d.title}</strong> <span style="color:var(--text3);">${d.type} &middot; ${d.chunks} chunks &middot; ${d.status}</span>
+        </div>`
+      ).join('') : ''}
+    `;
+  } catch(e) {
+    document.getElementById('corpus-info').textContent = 'Error loading corpus status.';
+  }
+}
+
+async function searchCorpus() {
+  const query = document.getElementById('corpus-query').value.trim();
+  if (!query) return;
+
+  const results = document.getElementById('corpus-results');
+  results.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const r = await fetch('/api/corpus/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, n_results: 5 })
+    });
+    const data = await r.json();
+
+    if (data.length === 0) {
+      results.innerHTML = '<p style="color:var(--text3);">No results found.</p>';
+      return;
+    }
+
+    results.innerHTML = data.map(r => `
+      <div style="background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:14px; margin-bottom:10px;">
+        <div style="font-weight:600; font-size:13px; margin-bottom:4px;">${r.title}</div>
+        ${r.citation_ref ? `<div style="font-size:11px; color:var(--accent);">${r.citation_ref}</div>` : ''}
+        <div style="font-size:12px; color:var(--text2); margin-top:8px;">${r.excerpt}...</div>
+        <div style="font-size:11px; color:var(--text3); margin-top:6px;">Relevance: ${(r.score * 100).toFixed(0)}%</div>
+      </div>
+    `).join('');
+  } catch(e) {
+    results.innerHTML = '<p style="color:var(--red);">Search failed.</p>';
+  }
+}
+
+// Tabs
+function switchTab(tab) {
+  ['generate', 'history', 'corpus'].forEach(t => {
+    const panel = document.getElementById(`panel-${t}`);
+    const btn = document.getElementById(`tab-${t}`);
+    if (panel) panel.classList.toggle('active', t === tab);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+  if (tab === 'history') loadHistory();
+  if (tab === 'corpus') loadCorpus();
+}
+
+// Utils
+function escapeHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function mdToHtml(text) {
+  if (!text) return '';
+  let s = escapeHtml(text);
+  s = s.replace(/```[\s\S]*?```/g, m => { const inner = m.slice(3,-3).replace(/^\w*\n/,''); return `<pre style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;font-size:12px;"><code>${inner}</code></pre>`; });
+  s = s.replace(/`([^`]+)`/g, '<code style="background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:1px 4px;font-size:12px;">$1</code>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  s = s.replace(/((?:^[ \t]*[-*][ \t].+\n?)+)/gm, block => { const items = block.trim().split('\n').map(l => `<li>${l.replace(/^[ \t]*[-*][ \t]/,'').trim()}</li>`).join(''); return `<ul style="padding-left:1.4em;margin:0.5em 0;">${items}</ul>`; });
+  s = s.replace(/((?:^[ \t]*\d+\.[ \t].+\n?)+)/gm, block => { const items = block.trim().split('\n').map(l => `<li>${l.replace(/^[ \t]*\d+\.[ \t]/,'').trim()}</li>`).join(''); return `<ol style="padding-left:1.4em;margin:0.5em 0;">${items}</ol>`; });
+  s = s.split(/\n{2,}/).map(p => { p = p.trim(); if (!p || /^<(ul|ol|pre)/.test(p)) return p; return `<p style="margin:0.5em 0;">${p.replace(/\n/g,'<br>')}</p>`; }).join('');
+  return s;
+}
+
+function toast(msg, type='info') {
+  const container = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+</script>
+</body>
+</html>

@@ -441,5 +441,29 @@ def corpus_reset(corpus_path):
         raise click.Abort()
 
 
+@app.command()
+@click.option('--host', '-h', default='0.0.0.0', help='Host to bind to')
+@click.option('--port', '-p', default=8080, type=int, help='Port to listen on')
+@click.option('--reload', is_flag=True, help='Enable auto-reload for development')
+def server(host, port, reload):
+    """Start the ZettaBrain Skills web server"""
+    import uvicorn
+
+    console.print(Panel(
+        f"[bold cyan]ZettaBrain Skills[/bold cyan] v{__version__}\n\n"
+        f"  URL:    http://{host}:{port}\n"
+        f"  Reload: {'enabled' if reload else 'disabled'}",
+        title="Starting Server",
+        border_style="cyan",
+    ))
+
+    uvicorn.run(
+        "zettabrain_skills.web.app:app",
+        host=host,
+        port=port,
+        reload=reload,
+    )
+
+
 if __name__ == "__main__":
     app()
