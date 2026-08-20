@@ -275,21 +275,41 @@ async def ws_generate(websocket: WebSocket):
                 temperature = skill.temperature
                 max_tokens = skill.max_tokens
 
+                full_content = ""
                 try:
                     for token in engine.llm_provider.stream(
                         prompt=prompt, temperature=temperature, max_tokens=max_tokens
                     ):
+                        full_content += token
                         await websocket.send_json({"type": "token", "token": token})
                 except NotImplementedError:
-                    content = engine.llm_provider.generate(
+                    full_content = engine.llm_provider.generate(
                         prompt=prompt, temperature=temperature, max_tokens=max_tokens
                     )
-                    await websocket.send_json({"type": "token", "token": content})
+                    await websocket.send_json({"type": "token", "token": full_content})
 
                 generation_time_ms = int((time.time() - start_time) * 1000)
 
+                import uuid
+                doc_id = str(uuid.uuid4())
+                doc_data = {
+                    "id": doc_id,
+                    "skill_name": skill.name,
+                    "skill_display": skill.name.replace("-", " ").title(),
+                    "customer_name": customer_name or "Customer",
+                    "request": input_text,
+                    "content": full_content,
+                    "citations": citations,
+                    "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "generation_time_ms": generation_time_ms,
+                }
+                generated_documents.insert(0, doc_data)
+                if len(generated_documents) > 50:
+                    generated_documents.pop()
+
                 await websocket.send_json({
                     "type": "done",
+                    "id": doc_id,
                     "skill": skill.name,
                     "generation_time_ms": generation_time_ms,
                     "model": getattr(engine.llm_provider, "model", "unknown"),
@@ -360,6 +380,84 @@ body {{ font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.6; color
         content=pdf_bytes.read(),
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=zettabrain-{skill_name}-{doc_id[:8]}.pdf"},
+    )
+
+
+@app.get("/api/documents/{doc_id}/docx")
+async def api_document_docx(doc_id: str):
+    from docx import Document as DocxDocument
+    from docx.shared import Inches, Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    doc = next((d for d in generated_documents if d["id"] == doc_id), None)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    docx_doc = DocxDocument()
+
+    style = docx_doc.styles["Normal"]
+    style.font.name = "Arial"
+    style.font.size = Pt(11)
+
+    heading = docx_doc.add_heading("ZettaBrain Skills", level=0)
+    heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    for run in heading.runs:
+        run.font.color.rgb = RGBColor(0x63, 0x66, 0xF1)
+
+    subtitle = docx_doc.add_paragraph()
+    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = subtitle.add_run(doc.get("skill_display", "Document"))
+    run.font.italic = True
+    run.font.color.rgb = RGBColor(0x88, 0x88, 0x88)
+
+    docx_doc.add_paragraph()
+
+    meta_table = docx_doc.add_table(rows=3, cols=2)
+    meta_table.style = "Light Shading Accent 1"
+    cells = meta_table.rows[0].cells
+    cells[0].text = "Customer"
+    cells[1].text = doc.get("customer_name", "")
+    cells = meta_table.rows[1].cells
+    cells[0].text = "Generated"
+    cells[1].text = doc.get("created_at", "")
+    cells = meta_table.rows[2].cells
+    cells[0].text = "Document ID"
+    cells[1].text = doc["id"]
+
+    docx_doc.add_paragraph()
+
+    for line in doc["content"].split("\n"):
+        if line.startswith("# "):
+            docx_doc.add_heading(line[2:], level=1)
+        elif line.startswith("## "):
+            docx_doc.add_heading(line[3:], level=2)
+        elif line.startswith("### "):
+            docx_doc.add_heading(line[4:], level=3)
+        elif line.strip():
+            docx_doc.add_paragraph(line)
+
+    if doc.get("citations"):
+        docx_doc.add_paragraph()
+        docx_doc.add_heading("Sources", level=2)
+        for citation in doc["citations"]:
+            docx_doc.add_paragraph(citation, style="List Bullet")
+
+    footer = docx_doc.sections[0].footer
+    footer_para = footer.paragraphs[0]
+    footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = footer_para.add_run("Powered by ZettaBrain Skills")
+    run.font.size = Pt(8)
+    run.font.color.rgb = RGBColor(0x99, 0x99, 0x99)
+
+    docx_bytes = BytesIO()
+    docx_doc.save(docx_bytes)
+    docx_bytes.seek(0)
+
+    skill_name = doc.get("skill_name", "document").replace(" ", "-")
+    return Response(
+        content=docx_bytes.read(),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename=zettabrain-{skill_name}-{doc_id[:8]}.docx"},
     )
 
 

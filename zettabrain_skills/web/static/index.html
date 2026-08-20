@@ -460,7 +460,12 @@ function finishGeneration(data) {
     const timeStr = data.generation_time_ms >= 1000
       ? (data.generation_time_ms / 1000).toFixed(1) + 's'
       : data.generation_time_ms + 'ms';
-    meta.innerHTML = `${data.model || ''} &middot; ${timeStr}`;
+
+    const docId = data.id || '';
+    const downloadLinks = docId
+      ? `<a href="/api/documents/${docId}/pdf" class="btn btn-ghost btn-sm" style="margin-left:8px;">PDF</a><a href="/api/documents/${docId}/docx" class="btn btn-ghost btn-sm">Word</a>`
+      : '';
+    meta.innerHTML = `${data.model || ''} &middot; ${timeStr} ${downloadLinks}`;
 
     if (data.citations && data.citations.length > 0) {
       const card = document.getElementById('current-result');
@@ -516,7 +521,10 @@ async function viewDocument(id) {
     <div class="result-card">
       <div class="result-header">
         <span style="font-weight:600;">${doc.skill_display || doc.skill_name}</span>
-        <a href="/api/documents/${doc.id}/pdf" class="btn btn-ghost btn-sm">Download PDF</a>
+        <div style="display:flex; gap:6px;">
+          <a href="/api/documents/${doc.id}/pdf" class="btn btn-ghost btn-sm">PDF</a>
+          <a href="/api/documents/${doc.id}/docx" class="btn btn-ghost btn-sm">Word</a>
+        </div>
       </div>
       <div class="result-content">${mdToHtml(doc.content)}</div>
       ${doc.citations && doc.citations.length > 0 ? `
