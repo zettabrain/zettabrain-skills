@@ -4,7 +4,6 @@ SPA architecture with JSON API + WebSocket streaming.
 """
 
 import glob
-import html as html_lib
 import os
 import time
 import json
@@ -13,13 +12,11 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import markdown
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from weasyprint import HTML
 
 from zettabrain_skills.core.engine import GenerationEngine
 from zettabrain_skills.core.models import GenerationRequest
@@ -341,57 +338,123 @@ async def api_document(doc_id: str):
 
 @app.get("/api/documents/{doc_id}/pdf")
 async def api_document_pdf(doc_id: str):
+    from fpdf import FPDF
+
     doc = next((d for d in generated_documents if d["id"] == doc_id), None)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    content_html = markdown.markdown(
-        doc["content"],
-        extensions=["tables", "fenced_code", "nl2br"],
-    )
-    customer_esc = html_lib.escape(doc.get("customer_name", ""))
-    skill_esc = html_lib.escape(doc.get("skill_display", "Document"))
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=20)
+    pdf.add_page()
 
-    pdf_html = f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<style>
-@page {{ size: letter; margin: 0.75in; }}
-body {{ font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #333; }}
-h1, h2, h3 {{ color: #333; margin-top: 1em; }}
-.header {{ text-align: center; margin-bottom: 30px; border-bottom: 3px solid #6366f1; padding-bottom: 20px; }}
-.header h1 {{ color: #6366f1; font-size: 22pt; margin: 0 0 8px 0; }}
-.header .doc-type {{ color: #888; font-size: 11pt; font-style: italic; }}
-.meta {{ background: #f8f9ff; padding: 15px; margin-bottom: 25px; border-left: 4px solid #6366f1; }}
-.meta-item {{ margin: 4px 0; }}
-.meta-label {{ font-weight: bold; color: #6366f1; }}
-table {{ border-collapse: collapse; width: 100%; margin: 1em 0; }}
-th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 10pt; }}
-th {{ background: #f0f0f0; }}
-code {{ background: #f5f5f5; padding: 2px 4px; border-radius: 3px; font-size: 10pt; }}
-pre {{ background: #f5f5f5; padding: 12px; border-radius: 4px; overflow-x: auto; }}
-ul, ol {{ padding-left: 1.5em; }}
-.footer {{ margin-top: 40px; border-top: 1px solid #ddd; padding-top: 12px; text-align: center; color: #999; font-size: 8pt; }}
-</style></head><body>
-<div class="header">
-  <h1>ZettaBrain Skills</h1>
-  <p class="doc-type">{skill_esc}</p>
-</div>
-<div class="meta">
-  <div class="meta-item"><span class="meta-label">Customer:</span> {customer_esc}</div>
-  <div class="meta-item"><span class="meta-label">Generated:</span> {doc['created_at']}</div>
-  <div class="meta-item"><span class="meta-label">ID:</span> {doc['id']}</div>
-</div>
-<div class="content">{content_html}</div>
-<div class="footer">Powered by ZettaBrain Skills</div>
-</body></html>"""
+    # Header
+    pdf.set_font("Helvetica", "B", 20)
+    pdf.set_text_color(99, 102, 241)
+    pdf.cell(0, 12, "ZettaBrain Skills", ln=True, align="C")
+    pdf.set_font("Helvetica", "I", 11)
+    pdf.set_text_color(136, 136, 136)
+    pdf.cell(0, 8, doc.get("skill_display", "Document"), ln=True, align="C")
+    pdf.ln(4)
+    pdf.set_draw_color(99, 102, 241)
+    pdf.set_line_width(0.8)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(8)
 
-    pdf_bytes = BytesIO()
-    HTML(string=pdf_html).write_pdf(pdf_bytes)
-    pdf_bytes.seek(0)
+    # Metadata
+    pdf.set_fill_color(248, 249, 255)
+    pdf.set_draw_color(99, 102, 241)
+    y_start = pdf.get_y()
+    pdf.rect(10, y_start, 190, 24, style="F")
+    pdf.set_line_width(0.6)
+    pdf.line(10, y_start, 10, y_start + 24)
 
+    pdf.set_xy(14, y_start + 2)
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_text_color(99, 102, 241)
+    pdf.cell(22, 6, "Customer:")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(51, 51, 51)
+    pdf.cell(0, 6, doc.get("customer_name", ""), ln=True)
+
+    pdf.set_x(14)
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_text_color(99, 102, 241)
+    pdf.cell(22, 6, "Generated:")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(51, 51, 51)
+    pdf.cell(0, 6, doc.get("created_at", ""), ln=True)
+
+    pdf.set_x(14)
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_text_color(99, 102, 241)
+    pdf.cell(22, 6, "ID:")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(51, 51, 51)
+    pdf.cell(0, 6, doc["id"][:16] + "...", ln=True)
+    pdf.ln(10)
+
+    # Content
+    pdf.set_text_color(33, 33, 33)
+    for line in doc["content"].split("\n"):
+        if line.startswith("### "):
+            pdf.ln(3)
+            pdf.set_font("Helvetica", "B", 12)
+            pdf.multi_cell(0, 6, line[4:])
+            pdf.ln(1)
+        elif line.startswith("## "):
+            pdf.ln(4)
+            pdf.set_font("Helvetica", "B", 13)
+            pdf.multi_cell(0, 7, line[3:])
+            pdf.ln(1)
+        elif line.startswith("# "):
+            pdf.ln(5)
+            pdf.set_font("Helvetica", "B", 15)
+            pdf.multi_cell(0, 8, line[2:])
+            pdf.ln(2)
+        elif line.startswith("- ") or line.startswith("* "):
+            pdf.set_font("Helvetica", "", 10)
+            pdf.cell(6, 5, "")
+            pdf.multi_cell(0, 5, "• " + line[2:])
+        elif line.strip().startswith("|") and "|" in line[1:]:
+            pdf.set_font("Helvetica", "", 9)
+            pdf.multi_cell(0, 5, line.strip())
+        elif line.strip() == "":
+            pdf.ln(3)
+        else:
+            clean = line.replace("**", "").replace("*", "").strip()
+            if clean:
+                pdf.set_font("Helvetica", "", 10)
+                pdf.multi_cell(0, 5, clean)
+
+    # Citations
+    if doc.get("citations"):
+        pdf.ln(8)
+        pdf.set_draw_color(200, 200, 200)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        pdf.ln(4)
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.set_text_color(99, 102, 241)
+        pdf.cell(0, 7, "Sources", ln=True)
+        pdf.set_font("Helvetica", "", 9)
+        pdf.set_text_color(80, 80, 80)
+        for citation in doc["citations"]:
+            pdf.cell(4, 5, "")
+            pdf.multi_cell(0, 5, "• " + citation)
+
+    # Footer
+    pdf.ln(10)
+    pdf.set_draw_color(200, 200, 200)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(4)
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.cell(0, 5, "Powered by ZettaBrain Skills", ln=True, align="C")
+
+    pdf_output = pdf.output()
     skill_name = doc.get("skill_name", "document").replace(" ", "-")
     return Response(
-        content=pdf_bytes.read(),
+        content=bytes(pdf_output),
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=zettabrain-{skill_name}-{doc_id[:8]}.pdf"},
     )
