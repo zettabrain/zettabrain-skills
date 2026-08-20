@@ -97,7 +97,7 @@ class CorpusRetriever:
                 chunk_index=int(metadata.get("chunk_index", 0)),
                 start_char=int(metadata.get("start_char", 0)),
                 end_char=int(metadata.get("end_char", 0)),
-                metadata=metadata,
+                metadata={k: str(v) for k, v in metadata.items()},
             )
 
             citation = Citation(
