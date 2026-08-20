@@ -24,14 +24,24 @@ class OllamaEmbeddingFunction:
     def __call__(self, input: List[str]) -> List[List[float]]:
         embeddings = []
         for text in input:
-            response = httpx.post(
-                f"{self.base_url}/api/embed",
-                json={"model": self.model, "input": text},
-                timeout=60.0,
-            )
-            response.raise_for_status()
-            data = response.json()
-            embeddings.append(data["embeddings"][0])
+            try:
+                response = httpx.post(
+                    f"{self.base_url}/api/embed",
+                    json={"model": self.model, "input": text},
+                    timeout=60.0,
+                )
+                response.raise_for_status()
+                data = response.json()
+                embeddings.append(data["embeddings"][0])
+            except httpx.HTTPStatusError:
+                response = httpx.post(
+                    f"{self.base_url}/api/embeddings",
+                    json={"model": self.model, "prompt": text},
+                    timeout=60.0,
+                )
+                response.raise_for_status()
+                data = response.json()
+                embeddings.append(data["embedding"])
         return embeddings
 
 

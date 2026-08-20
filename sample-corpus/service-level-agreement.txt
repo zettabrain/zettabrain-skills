@@ -1,0 +1,56 @@
+=== CORPUS DOCUMENT ===
+Title: Cloud Platform Service Level Agreement
+Issuing Body: Acme Corp Engineering
+Citation: ACME-SLA-CLOUD-2024-001
+Effective Date: March 1, 2024
+Status: current
+Review By: March 1, 2025
+===
+
+SERVICE LEVEL AGREEMENT - CLOUD PLATFORM SERVICES
+
+1. SERVICE AVAILABILITY
+
+1.1 Acme Corp guarantees 99.95% monthly uptime for all production services measured over each calendar month.
+
+1.2 Scheduled maintenance windows (Tuesday/Thursday 02:00-04:00 UTC) are excluded from availability calculations.
+
+1.3 Uptime is calculated as: (Total Minutes - Downtime Minutes) / Total Minutes * 100
+
+2. RESPONSE TIME TARGETS
+
+Severity 1 (Service Down): Response within 15 minutes, resolution target 4 hours
+Severity 2 (Major Impact): Response within 30 minutes, resolution target 8 hours
+Severity 3 (Minor Impact): Response within 2 hours, resolution target 24 hours
+Severity 4 (Low Priority): Response within 8 hours, resolution target 5 business days
+
+3. SERVICE CREDITS
+
+If monthly uptime falls below guaranteed levels, customers receive:
+- 99.0% - 99.95%: 10% credit on monthly invoice
+- 95.0% - 99.0%: 25% credit on monthly invoice
+- Below 95.0%: 50% credit on monthly invoice
+
+Credits must be requested within 30 days of the incident. Maximum credit per month: 50% of monthly fee.
+
+4. EXCLUSIONS
+
+The SLA does not apply to:
+- Force majeure events
+- Customer-caused outages (misconfiguration, overload)
+- Scheduled maintenance within designated windows
+- Beta or pre-release features
+- Services suspended due to non-payment
+
+5. MONITORING AND REPORTING
+
+5.1 Real-time status page: status.acme.example
+5.2 Monthly uptime reports delivered by the 5th business day
+5.3 Post-incident reports within 48 hours for Severity 1/2 events
+
+6. SUPPORT CHANNELS
+
+- Web portal: support.acme.example (24/7)
+- Phone: +1-800-ACME-SOS (Severity 1/2 only, 24/7)
+- Email: support@acme.example (response within 4 hours during business hours)
+- Dedicated Slack channel for Enterprise customers
