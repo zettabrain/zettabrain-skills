@@ -652,60 +652,102 @@ async def api_delete_skill(skill_name: str):
 
 # ── API: Settings ───────────────────────────────────────
 
-class SettingsUpdate(BaseModel):
-    llm_provider: Optional[str] = None
-    llm_model: Optional[str] = None
-    embedding_model: Optional[str] = None
-    ollama_url: Optional[str] = None
-
-
 @app.get("/api/settings")
 async def api_get_settings():
-    """Get current LLM and embedding configuration."""
-    from zettabrain_skills.llm.factory import get_provider_info
-
-    provider_info = get_provider_info()
-
+    """Get current LLM and embedding configuration for all providers."""
     return {
         "llm_provider": os.getenv("LLM_PROVIDER", "ollama"),
-        "llm_model": os.getenv("OLLAMA_MODEL", "llama3.1:8b"),
-        "embedding_model": os.getenv("EMBEDDING_MODEL", "nomic-embed-text"),
+        # Ollama
         "ollama_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
-        "available_providers": provider_info.get("available_providers", []),
+        "ollama_model": os.getenv("OLLAMA_MODEL", "llama3.1:8b"),
+        "ollama_timeout": os.getenv("OLLAMA_TIMEOUT", "600"),
+        # Groq
+        "groq_api_key": bool(os.getenv("GROQ_API_KEY")),
+        "groq_model": os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
+        # Together
+        "together_api_key": bool(os.getenv("TOGETHER_API_KEY")),
+        "together_model": os.getenv("TOGETHER_MODEL", "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"),
+        # Bedrock
+        "aws_access_key": bool(os.getenv("AWS_ACCESS_KEY_ID")),
+        "aws_region": os.getenv("AWS_REGION", "us-east-1"),
+        "bedrock_model": os.getenv("BEDROCK_MODEL", "meta.llama3-1-8b-instruct-v1:0"),
+        # Embedding
+        "embedding_model": os.getenv("EMBEDDING_MODEL", "nomic-embed-text"),
+        "embedding_url": os.getenv("OLLAMA_HOST", ""),
+        # Status
         "configured_providers": {
             "ollama": True,
             "groq": bool(os.getenv("GROQ_API_KEY")),
             "together": bool(os.getenv("TOGETHER_API_KEY")),
             "bedrock": bool(os.getenv("AWS_ACCESS_KEY_ID")),
-            "claude": bool(os.getenv("ANTHROPIC_API_KEY")),
-            "openai": bool(os.getenv("OPENAI_API_KEY")),
         },
     }
 
 
 @app.post("/api/settings")
-async def api_update_settings(settings: SettingsUpdate):
+async def api_update_settings(settings: Dict[str, Any]):
     """Update LLM and embedding configuration (runtime, not persisted across restarts)."""
-    updated = {}
+    updated = []
 
-    if settings.llm_provider:
-        os.environ["LLM_PROVIDER"] = settings.llm_provider
-        updated["llm_provider"] = settings.llm_provider
+    provider = settings.get("llm_provider")
+    if provider:
+        os.environ["LLM_PROVIDER"] = provider
+        updated.append(f"provider={provider}")
 
-    if settings.llm_model:
-        os.environ["OLLAMA_MODEL"] = settings.llm_model
-        updated["llm_model"] = settings.llm_model
+    # Ollama settings
+    if settings.get("ollama_url"):
+        os.environ["OLLAMA_BASE_URL"] = settings["ollama_url"]
+        updated.append("ollama_url")
+    if settings.get("ollama_model"):
+        os.environ["OLLAMA_MODEL"] = settings["ollama_model"]
+        updated.append(f"model={settings['ollama_model']}")
+    if settings.get("ollama_timeout"):
+        os.environ["OLLAMA_TIMEOUT"] = str(settings["ollama_timeout"])
+        updated.append("timeout")
 
-    if settings.embedding_model:
-        os.environ["EMBEDDING_MODEL"] = settings.embedding_model
-        updated["embedding_model"] = settings.embedding_model
+    # Groq settings
+    if settings.get("groq_api_key"):
+        os.environ["GROQ_API_KEY"] = settings["groq_api_key"]
+        updated.append("groq_api_key")
+    if settings.get("groq_model"):
+        os.environ["GROQ_MODEL"] = settings["groq_model"]
+        os.environ["OLLAMA_MODEL"] = settings["groq_model"]
+        updated.append(f"model={settings['groq_model']}")
 
-    if settings.ollama_url:
-        os.environ["OLLAMA_BASE_URL"] = settings.ollama_url
-        os.environ["OLLAMA_HOST"] = settings.ollama_url
-        updated["ollama_url"] = settings.ollama_url
+    # Together settings
+    if settings.get("together_api_key"):
+        os.environ["TOGETHER_API_KEY"] = settings["together_api_key"]
+        updated.append("together_api_key")
+    if settings.get("together_model"):
+        os.environ["TOGETHER_MODEL"] = settings["together_model"]
+        updated.append(f"model={settings['together_model']}")
 
-    return {"updated": updated, "message": "Settings updated (runtime only, restart will reset)."}
+    # Bedrock settings
+    if settings.get("aws_access_key"):
+        os.environ["AWS_ACCESS_KEY_ID"] = settings["aws_access_key"]
+        updated.append("aws_access_key")
+    if settings.get("aws_secret_key"):
+        os.environ["AWS_SECRET_ACCESS_KEY"] = settings["aws_secret_key"]
+        updated.append("aws_secret_key")
+    if settings.get("aws_region"):
+        os.environ["AWS_REGION"] = settings["aws_region"]
+        updated.append(f"region={settings['aws_region']}")
+    if settings.get("bedrock_model"):
+        os.environ["BEDROCK_MODEL"] = settings["bedrock_model"]
+        updated.append(f"model={settings['bedrock_model']}")
+
+    # Embedding settings
+    if settings.get("embedding_model"):
+        os.environ["EMBEDDING_MODEL"] = settings["embedding_model"]
+        updated.append(f"embedding={settings['embedding_model']}")
+    if settings.get("embedding_url"):
+        os.environ["OLLAMA_HOST"] = settings["embedding_url"]
+        updated.append("embedding_url")
+
+    return {
+        "updated": updated,
+        "message": f"Settings updated: {', '.join(updated) if updated else 'no changes'}. Restart server to persist.",
+    }
 
 
 # ── Health ───────────────────────────────────────────────
