@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from zettabrain_skills.core.engine import GenerationEngine
 from zettabrain_skills.core.models import GenerationRequest
 from zettabrain_skills.skills.parser import load_skill
+from zettabrain_skills.web.document_store import DocumentStore
 
 app = FastAPI(
     title="ZettaBrain Skills",
@@ -44,7 +45,7 @@ if STATIC_DIR.exists():
 SKILLS_DIR = os.getenv("SKILLS_DIR", "examples")
 CORPUS_PATH = os.getenv("CORPUS_PATH", ".corpus")
 
-generated_documents: List[Dict[str, Any]] = []
+document_store = DocumentStore()
 
 
 def _load_skills() -> List[Dict[str, Any]]:
@@ -127,7 +128,7 @@ async def api_status():
             "documents": corpus_docs,
             "path": CORPUS_PATH,
         },
-        "documents_generated": len(generated_documents),
+        "documents_generated": document_store.count(),
         "version": "1.0.0",
     }
 
@@ -197,9 +198,7 @@ async def api_generate(req: GenerateRequest):
         "created_at": result.created_at.strftime("%Y-%m-%d %H:%M:%S"),
         "generation_time_ms": result.generation_time_ms,
     }
-    generated_documents.insert(0, doc_data)
-    if len(generated_documents) > 50:
-        generated_documents.pop()
+    document_store.insert(doc_data)
 
     return doc_data
 
@@ -301,9 +300,7 @@ async def ws_generate(websocket: WebSocket):
                     "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "generation_time_ms": generation_time_ms,
                 }
-                generated_documents.insert(0, doc_data)
-                if len(generated_documents) > 50:
-                    generated_documents.pop()
+                document_store.insert(doc_data)
 
                 await websocket.send_json({
                     "type": "done",
@@ -325,22 +322,31 @@ async def ws_generate(websocket: WebSocket):
 
 @app.get("/api/documents")
 async def api_documents():
-    return generated_documents
+    return document_store.get_all(limit=50)
 
 
 @app.get("/api/documents/{doc_id}")
 async def api_document(doc_id: str):
-    doc = next((d for d in generated_documents if d["id"] == doc_id), None)
+    doc = document_store.get_by_id(doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     return doc
+
+
+@app.delete("/api/documents/{doc_id}")
+async def api_delete_document(doc_id: str):
+    doc = document_store.get_by_id(doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    document_store.delete(doc_id)
+    return {"deleted": True, "id": doc_id}
 
 
 @app.get("/api/documents/{doc_id}/pdf")
 async def api_document_pdf(doc_id: str):
     from fpdf import FPDF
 
-    doc = next((d for d in generated_documents if d["id"] == doc_id), None)
+    doc = document_store.get_by_id(doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -484,7 +490,7 @@ async def api_document_docx(doc_id: str):
     from docx.shared import Inches, Pt, RGBColor
     from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-    doc = next((d for d in generated_documents if d["id"] == doc_id), None)
+    doc = document_store.get_by_id(doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
