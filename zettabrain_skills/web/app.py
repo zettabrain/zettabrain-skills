@@ -395,29 +395,34 @@ async def api_document_pdf(doc_id: str):
     pdf.ln(10)
 
     # Content
+    left_margin = pdf.l_margin
     pdf.set_text_color(33, 33, 33)
     for line in doc["content"].split("\n"):
         if line.startswith("### "):
             pdf.ln(3)
             pdf.set_font("Helvetica", "B", 12)
+            pdf.set_x(left_margin)
             pdf.multi_cell(0, 6, line[4:])
             pdf.ln(1)
         elif line.startswith("## "):
             pdf.ln(4)
             pdf.set_font("Helvetica", "B", 13)
+            pdf.set_x(left_margin)
             pdf.multi_cell(0, 7, line[3:])
             pdf.ln(1)
         elif line.startswith("# "):
             pdf.ln(5)
             pdf.set_font("Helvetica", "B", 15)
+            pdf.set_x(left_margin)
             pdf.multi_cell(0, 8, line[2:])
             pdf.ln(2)
         elif line.startswith("- ") or line.startswith("* "):
             pdf.set_font("Helvetica", "", 10)
-            pdf.cell(6, 5, "")
+            pdf.set_x(left_margin + 6)
             pdf.multi_cell(0, 5, "• " + line[2:])
         elif line.strip().startswith("|") and "|" in line[1:]:
             pdf.set_font("Helvetica", "", 9)
+            pdf.set_x(left_margin)
             pdf.multi_cell(0, 5, line.strip())
         elif line.strip() == "":
             pdf.ln(3)
@@ -425,6 +430,7 @@ async def api_document_pdf(doc_id: str):
             clean = line.replace("**", "").replace("*", "").strip()
             if clean:
                 pdf.set_font("Helvetica", "", 10)
+                pdf.set_x(left_margin)
                 pdf.multi_cell(0, 5, clean)
 
     # Citations
@@ -435,11 +441,12 @@ async def api_document_pdf(doc_id: str):
         pdf.ln(4)
         pdf.set_font("Helvetica", "B", 11)
         pdf.set_text_color(99, 102, 241)
+        pdf.set_x(left_margin)
         pdf.cell(0, 7, "Sources", ln=True)
         pdf.set_font("Helvetica", "", 9)
         pdf.set_text_color(80, 80, 80)
         for citation in doc["citations"]:
-            pdf.cell(4, 5, "")
+            pdf.set_x(left_margin + 4)
             pdf.multi_cell(0, 5, "• " + citation)
 
     # Footer
