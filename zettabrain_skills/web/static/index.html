@@ -134,6 +134,16 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
+  /* Upload zone */
+  .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; text-align: center; cursor: pointer; transition: all 0.15s; margin-bottom: 12px; }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: rgba(99,102,241,0.05); }
+  .upload-zone p { color: var(--text2); font-size: 13px; margin-bottom: 6px; }
+  .upload-zone .upload-hint { font-size: 11px; color: var(--text3); }
+  .upload-zone input[type="file"] { display: none; }
+
+  .upload-progress { background: var(--bg3); border-radius: 6px; padding: 10px 14px; margin-top: 8px; font-size: 12px; color: var(--text2); display: none; }
+  .upload-progress.active { display: flex; align-items: center; gap: 10px; }
+
   /* Responsive */
   @media (max-width: 640px) { .sidebar { display: none; } }
 </style>
@@ -183,7 +193,13 @@
 
     <!-- Skills -->
     <div class="sidebar-section" style="flex:1; overflow:hidden; display:flex; flex-direction:column;">
-      <div class="sidebar-label">Available Skills</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div class="sidebar-label" style="margin-bottom:0;">Available Skills</div>
+        <label class="btn btn-ghost btn-sm" style="padding:3px 8px; font-size:11px; cursor:pointer;">
+          + Upload
+          <input type="file" accept=".md" style="display:none;" onchange="uploadSkill(this)" />
+        </label>
+      </div>
       <ul class="skill-list" id="skill-list">
         <li style="color:var(--text3); padding:8px;">Loading...</li>
       </ul>
@@ -236,6 +252,18 @@
     <!-- CORPUS PANEL -->
     <div class="panel" id="panel-corpus">
       <div class="panel-content">
+        <div class="panel-section">
+          <h3>Upload Documents</h3>
+          <div class="upload-zone" id="corpus-upload-zone" onclick="document.getElementById('corpus-file-input').click()">
+            <p>Drop files here or click to upload</p>
+            <div class="upload-hint">Supported: PDF, DOCX, TXT, MD (multiple files allowed)</div>
+            <input type="file" id="corpus-file-input" multiple accept=".pdf,.docx,.txt,.md" onchange="uploadCorpusFiles(this.files)" />
+          </div>
+          <div class="upload-progress" id="corpus-upload-progress">
+            <div class="spinner"></div>
+            <span id="corpus-upload-status">Uploading and ingesting...</span>
+          </div>
+        </div>
         <div class="panel-section">
           <h3>Corpus Status</h3>
           <div id="corpus-info" style="color:var(--text2); font-size:13px;">Loading...</div>
@@ -596,6 +624,82 @@ function toast(msg, type='info') {
   el.textContent = msg;
   container.appendChild(el);
   setTimeout(() => el.remove(), 4000);
+}
+
+// Corpus Upload
+async function uploadCorpusFiles(files) {
+  if (!files || files.length === 0) return;
+
+  const progress = document.getElementById('corpus-upload-progress');
+  const status = document.getElementById('corpus-upload-status');
+  progress.classList.add('active');
+  status.textContent = `Uploading ${files.length} file(s) and ingesting...`;
+
+  const formData = new FormData();
+  for (let i = 0; i < files.length; i++) {
+    formData.append('files', files[i]);
+  }
+
+  try {
+    const r = await fetch('/api/corpus/upload', { method: 'POST', body: formData });
+    const data = await r.json();
+
+    if (data.error && data.ingested === 0) {
+      toast(data.error, 'error');
+    } else {
+      toast(`Ingested ${data.ingested} document(s) — ${data.total_chunks} total chunks`, 'success');
+      if (data.skipped && data.skipped.length > 0) {
+        toast(`Skipped: ${data.skipped.map(s => s.name).join(', ')}`, 'error');
+      }
+      loadCorpus();
+      refreshStatus();
+    }
+  } catch(e) {
+    toast('Upload failed: ' + e.message, 'error');
+  } finally {
+    progress.classList.remove('active');
+    document.getElementById('corpus-file-input').value = '';
+  }
+}
+
+// Drag and drop for corpus
+document.addEventListener('DOMContentLoaded', () => {
+  const zone = document.getElementById('corpus-upload-zone');
+  if (zone) {
+    zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      zone.classList.remove('dragover');
+      uploadCorpusFiles(e.dataTransfer.files);
+    });
+  }
+});
+
+// Skill Upload
+async function uploadSkill(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const r = await fetch('/api/skills/upload', { method: 'POST', body: formData });
+    const data = await r.json();
+
+    if (!r.ok) {
+      toast(data.detail || 'Upload failed', 'error');
+      return;
+    }
+
+    toast(`Skill uploaded: ${data.display_name}`, 'success');
+    refreshStatus();
+  } catch(e) {
+    toast('Upload failed: ' + e.message, 'error');
+  } finally {
+    input.value = '';
+  }
 }
 </script>
 </body>

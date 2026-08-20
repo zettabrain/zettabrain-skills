@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import markdown
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -416,6 +416,110 @@ async def api_corpus_search(req: CorpusSearchRequest):
         }
         for r in results
     ]
+
+
+# ── API: Corpus Upload ──────────────────────────────────
+
+CORPUS_SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt", ".md"}
+
+
+@app.post("/api/corpus/upload")
+async def api_corpus_upload(files: List[UploadFile] = File(...)):
+    """Upload and ingest documents into the corpus."""
+    from zettabrain_skills.corpus.retrieval import CorpusRetriever
+
+    corpus_path = Path(CORPUS_PATH)
+    upload_dir = corpus_path / "uploads"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    saved_files = []
+    skipped_files = []
+
+    for file in files:
+        ext = Path(file.filename).suffix.lower()
+        if ext not in CORPUS_SUPPORTED_EXTENSIONS:
+            skipped_files.append({"name": file.filename, "reason": f"Unsupported format: {ext}"})
+            continue
+
+        dest = upload_dir / file.filename
+        content = await file.read()
+        dest.write_bytes(content)
+        saved_files.append(str(dest))
+
+    if not saved_files:
+        return {
+            "ingested": 0,
+            "skipped": skipped_files,
+            "error": "No supported files to ingest",
+        }
+
+    retriever = CorpusRetriever(corpus_path=str(corpus_path))
+    ingested_count = 0
+
+    for file_path in saved_files:
+        count = retriever.ingest(Path(file_path))
+        ingested_count += count
+
+    return {
+        "ingested": ingested_count,
+        "total_documents": retriever.document_count,
+        "total_chunks": retriever.chunk_count,
+        "skipped": skipped_files,
+    }
+
+
+# ── API: Skills Upload ──────────────────────────────────
+
+@app.post("/api/skills/upload")
+async def api_skills_upload(file: UploadFile = File(...)):
+    """Upload a new skill file (.md with YAML frontmatter)."""
+    if not file.filename.endswith(".md"):
+        raise HTTPException(status_code=400, detail="Skill files must be .md format")
+
+    content = await file.read()
+    text = content.decode("utf-8")
+
+    if not text.startswith("---"):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid skill file: must start with YAML frontmatter (---)",
+        )
+
+    skills_dir = Path(SKILLS_DIR)
+    skills_dir.mkdir(parents=True, exist_ok=True)
+
+    dest = skills_dir / file.filename
+    dest.write_text(text, encoding="utf-8")
+
+    try:
+        skill = load_skill(str(dest))
+        return {
+            "success": True,
+            "file": str(dest),
+            "name": skill.name,
+            "display_name": skill.name.replace("-", " ").title(),
+            "description": skill.description,
+            "version": skill.version,
+            "requires_corpus": skill.requires_corpus,
+        }
+    except Exception as e:
+        dest.unlink(missing_ok=True)
+        raise HTTPException(status_code=400, detail=f"Invalid skill file: {e}")
+
+
+@app.delete("/api/skills/{skill_name}")
+async def api_delete_skill(skill_name: str):
+    """Delete a skill file by name."""
+    skills_dir = Path(SKILLS_DIR)
+    for skill_file in skills_dir.glob("*.md"):
+        try:
+            skill = load_skill(str(skill_file))
+            if skill.name == skill_name:
+                skill_file.unlink()
+                return {"deleted": True, "name": skill_name}
+        except Exception:
+            continue
+    raise HTTPException(status_code=404, detail=f"Skill not found: {skill_name}")
 
 
 # ── Health ───────────────────────────────────────────────
