@@ -4,6 +4,7 @@ SPA architecture with JSON API + WebSocket streaming.
 """
 
 import glob
+import html as html_lib
 import os
 import time
 import json
@@ -344,30 +345,43 @@ async def api_document_pdf(doc_id: str):
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
+    content_html = markdown.markdown(
+        doc["content"],
+        extensions=["tables", "fenced_code", "nl2br"],
+    )
+    customer_esc = html_lib.escape(doc.get("customer_name", ""))
+    skill_esc = html_lib.escape(doc.get("skill_display", "Document"))
+
     pdf_html = f"""<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <style>
 @page {{ size: letter; margin: 0.75in; }}
 body {{ font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #333; }}
+h1, h2, h3 {{ color: #333; margin-top: 1em; }}
 .header {{ text-align: center; margin-bottom: 30px; border-bottom: 3px solid #6366f1; padding-bottom: 20px; }}
 .header h1 {{ color: #6366f1; font-size: 22pt; margin: 0 0 8px 0; }}
 .header .doc-type {{ color: #888; font-size: 11pt; font-style: italic; }}
 .meta {{ background: #f8f9ff; padding: 15px; margin-bottom: 25px; border-left: 4px solid #6366f1; }}
 .meta-item {{ margin: 4px 0; }}
 .meta-label {{ font-weight: bold; color: #6366f1; }}
-.content {{ white-space: pre-wrap; }}
+table {{ border-collapse: collapse; width: 100%; margin: 1em 0; }}
+th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 10pt; }}
+th {{ background: #f0f0f0; }}
+code {{ background: #f5f5f5; padding: 2px 4px; border-radius: 3px; font-size: 10pt; }}
+pre {{ background: #f5f5f5; padding: 12px; border-radius: 4px; overflow-x: auto; }}
+ul, ol {{ padding-left: 1.5em; }}
 .footer {{ margin-top: 40px; border-top: 1px solid #ddd; padding-top: 12px; text-align: center; color: #999; font-size: 8pt; }}
 </style></head><body>
 <div class="header">
   <h1>ZettaBrain Skills</h1>
-  <p class="doc-type">{doc.get('skill_display', 'Document')}</p>
+  <p class="doc-type">{skill_esc}</p>
 </div>
 <div class="meta">
-  <div class="meta-item"><span class="meta-label">Customer:</span> {doc['customer_name']}</div>
+  <div class="meta-item"><span class="meta-label">Customer:</span> {customer_esc}</div>
   <div class="meta-item"><span class="meta-label">Generated:</span> {doc['created_at']}</div>
   <div class="meta-item"><span class="meta-label">ID:</span> {doc['id']}</div>
 </div>
-<div class="content">{doc['content']}</div>
+<div class="content">{content_html}</div>
 <div class="footer">Powered by ZettaBrain Skills</div>
 </body></html>"""
 
@@ -516,16 +530,14 @@ async def api_corpus_search(req: CorpusSearchRequest):
     ]
 
 
-# ── API: Corpus Upload ──────────────────────────────────
+# ── API: Corpus Upload & Ingest ─────────────────────────
 
 CORPUS_SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt", ".md"}
 
 
 @app.post("/api/corpus/upload")
 async def api_corpus_upload(files: List[UploadFile] = File(...)):
-    """Upload and ingest documents into the corpus."""
-    from zettabrain_skills.corpus.retrieval import CorpusRetriever
-
+    """Upload documents to the corpus uploads directory (does not ingest)."""
     corpus_path = Path(CORPUS_PATH)
     upload_dir = corpus_path / "uploads"
     upload_dir.mkdir(parents=True, exist_ok=True)
@@ -542,27 +554,45 @@ async def api_corpus_upload(files: List[UploadFile] = File(...)):
         dest = upload_dir / file.filename
         content = await file.read()
         dest.write_bytes(content)
-        saved_files.append(str(dest))
+        saved_files.append(file.filename)
 
-    if not saved_files:
-        return {
-            "ingested": 0,
-            "skipped": skipped_files,
-            "error": "No supported files to ingest",
-        }
+    return {
+        "uploaded": len(saved_files),
+        "files": saved_files,
+        "skipped": skipped_files,
+        "message": f"Uploaded {len(saved_files)} file(s). Click 'Ingest' to process them.",
+    }
 
-    retriever = CorpusRetriever(corpus_path=str(corpus_path))
+
+@app.post("/api/corpus/ingest")
+async def api_corpus_ingest():
+    """Ingest all uploaded corpus documents into the vector store."""
+    from zettabrain_skills.corpus.retrieval import CorpusRetriever
+
+    corpus_path = Path(CORPUS_PATH)
+    upload_dir = corpus_path / "uploads"
+
+    if not upload_dir.exists() or not any(upload_dir.iterdir()):
+        raise HTTPException(status_code=400, detail="No files to ingest. Upload documents first.")
+
+    embedding_model = os.getenv("EMBEDDING_MODEL", "nomic-embed-text")
+    retriever = CorpusRetriever(corpus_path=str(corpus_path), embedding_model=embedding_model)
     ingested_count = 0
+    errors = []
 
-    for file_path in saved_files:
-        count = retriever.ingest(Path(file_path))
-        ingested_count += count
+    for file_path in sorted(upload_dir.rglob("*")):
+        if file_path.is_file() and file_path.suffix.lower() in CORPUS_SUPPORTED_EXTENSIONS:
+            try:
+                count = retriever.ingest(file_path)
+                ingested_count += count
+            except Exception as e:
+                errors.append({"file": file_path.name, "error": str(e)})
 
     return {
         "ingested": ingested_count,
         "total_documents": retriever.document_count,
         "total_chunks": retriever.chunk_count,
-        "skipped": skipped_files,
+        "errors": errors,
     }
 
 
@@ -618,6 +648,64 @@ async def api_delete_skill(skill_name: str):
         except Exception:
             continue
     raise HTTPException(status_code=404, detail=f"Skill not found: {skill_name}")
+
+
+# ── API: Settings ───────────────────────────────────────
+
+class SettingsUpdate(BaseModel):
+    llm_provider: Optional[str] = None
+    llm_model: Optional[str] = None
+    embedding_model: Optional[str] = None
+    ollama_url: Optional[str] = None
+
+
+@app.get("/api/settings")
+async def api_get_settings():
+    """Get current LLM and embedding configuration."""
+    from zettabrain_skills.llm.factory import get_provider_info
+
+    provider_info = get_provider_info()
+
+    return {
+        "llm_provider": os.getenv("LLM_PROVIDER", "ollama"),
+        "llm_model": os.getenv("OLLAMA_MODEL", "llama3.1:8b"),
+        "embedding_model": os.getenv("EMBEDDING_MODEL", "nomic-embed-text"),
+        "ollama_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+        "available_providers": provider_info.get("available_providers", []),
+        "configured_providers": {
+            "ollama": True,
+            "groq": bool(os.getenv("GROQ_API_KEY")),
+            "together": bool(os.getenv("TOGETHER_API_KEY")),
+            "bedrock": bool(os.getenv("AWS_ACCESS_KEY_ID")),
+            "claude": bool(os.getenv("ANTHROPIC_API_KEY")),
+            "openai": bool(os.getenv("OPENAI_API_KEY")),
+        },
+    }
+
+
+@app.post("/api/settings")
+async def api_update_settings(settings: SettingsUpdate):
+    """Update LLM and embedding configuration (runtime, not persisted across restarts)."""
+    updated = {}
+
+    if settings.llm_provider:
+        os.environ["LLM_PROVIDER"] = settings.llm_provider
+        updated["llm_provider"] = settings.llm_provider
+
+    if settings.llm_model:
+        os.environ["OLLAMA_MODEL"] = settings.llm_model
+        updated["llm_model"] = settings.llm_model
+
+    if settings.embedding_model:
+        os.environ["EMBEDDING_MODEL"] = settings.embedding_model
+        updated["embedding_model"] = settings.embedding_model
+
+    if settings.ollama_url:
+        os.environ["OLLAMA_BASE_URL"] = settings.ollama_url
+        os.environ["OLLAMA_HOST"] = settings.ollama_url
+        updated["ollama_url"] = settings.ollama_url
+
+    return {"updated": updated, "message": "Settings updated (runtime only, restart will reset)."}
 
 
 # ── Health ───────────────────────────────────────────────

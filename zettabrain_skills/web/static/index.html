@@ -218,6 +218,7 @@
         <button class="tab-btn active" id="tab-generate" onclick="switchTab('generate')">Generate</button>
         <button class="tab-btn" id="tab-history" onclick="switchTab('history')">History</button>
         <button class="tab-btn" id="tab-corpus" onclick="switchTab('corpus')">Corpus</button>
+        <button class="tab-btn" id="tab-settings" onclick="switchTab('settings')">Settings</button>
       </div>
     </div>
 
@@ -259,14 +260,21 @@
             <div class="upload-hint">Supported: PDF, DOCX, TXT, MD (multiple files allowed)</div>
             <input type="file" id="corpus-file-input" multiple accept=".pdf,.docx,.txt,.md" onchange="uploadCorpusFiles(this.files)" />
           </div>
+          <div id="corpus-uploaded-list" style="display:none; margin-bottom:12px;">
+            <div style="font-size:12px; color:var(--text2); margin-bottom:8px;" id="corpus-uploaded-names"></div>
+            <button class="btn btn-primary btn-sm" onclick="ingestCorpus()">Ingest into Vector Store</button>
+          </div>
           <div class="upload-progress" id="corpus-upload-progress">
             <div class="spinner"></div>
-            <span id="corpus-upload-status">Uploading and ingesting...</span>
+            <span id="corpus-upload-status">Processing...</span>
           </div>
         </div>
         <div class="panel-section">
           <h3>Corpus Status</h3>
           <div id="corpus-info" style="color:var(--text2); font-size:13px;">Loading...</div>
+          <div style="margin-top:12px;">
+            <button class="btn btn-ghost btn-sm" onclick="ingestCorpus()">Re-ingest All Uploads</button>
+          </div>
         </div>
         <div class="panel-section">
           <h3>Search Corpus</h3>
@@ -275,6 +283,51 @@
             <button class="btn btn-primary" onclick="searchCorpus()">Search</button>
           </div>
           <div id="corpus-results"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="panel" id="panel-settings">
+      <div class="panel-content">
+        <div class="panel-section">
+          <h3>LLM Configuration</h3>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <label style="font-size:12px; color:var(--text2); display:block; margin-bottom:4px;">Provider</label>
+              <select class="input-field" id="settings-provider" style="cursor:pointer;">
+                <option value="ollama">Ollama (Local)</option>
+                <option value="groq">Groq (Cloud)</option>
+                <option value="together">Together AI</option>
+                <option value="bedrock">AWS Bedrock</option>
+                <option value="claude">Claude (Anthropic)</option>
+                <option value="openai">OpenAI</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text2); display:block; margin-bottom:4px;">Model</label>
+              <input class="input-field" id="settings-model" placeholder="e.g. llama3.1:8b" />
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text2); display:block; margin-bottom:4px;">Ollama URL</label>
+              <input class="input-field" id="settings-ollama-url" placeholder="http://localhost:11434" />
+            </div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <h3>Embedding Configuration</h3>
+          <div>
+            <label style="font-size:12px; color:var(--text2); display:block; margin-bottom:4px;">Embedding Model (for corpus)</label>
+            <input class="input-field" id="settings-embedding" placeholder="e.g. nomic-embed-text" />
+          </div>
+        </div>
+        <div class="panel-section">
+          <h3>Provider Status</h3>
+          <div id="settings-provider-status" style="font-size:12px; color:var(--text2);"></div>
+        </div>
+        <div style="margin-top:16px;">
+          <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+          <span style="font-size:11px; color:var(--text3); margin-left:12px;">Changes apply at runtime (reset on server restart)</span>
         </div>
       </div>
     </div>
@@ -597,7 +650,7 @@ async function searchCorpus() {
 
 // Tabs
 function switchTab(tab) {
-  ['generate', 'history', 'corpus'].forEach(t => {
+  ['generate', 'history', 'corpus', 'settings'].forEach(t => {
     const panel = document.getElementById(`panel-${t}`);
     const btn = document.getElementById(`tab-${t}`);
     if (panel) panel.classList.toggle('active', t === tab);
@@ -605,6 +658,7 @@ function switchTab(tab) {
   });
   if (tab === 'history') loadHistory();
   if (tab === 'corpus') loadCorpus();
+  if (tab === 'settings') loadSettings();
 }
 
 // Utils
@@ -634,14 +688,14 @@ function toast(msg, type='info') {
   setTimeout(() => el.remove(), 4000);
 }
 
-// Corpus Upload
+// Corpus Upload (separate from ingest)
 async function uploadCorpusFiles(files) {
   if (!files || files.length === 0) return;
 
   const progress = document.getElementById('corpus-upload-progress');
   const status = document.getElementById('corpus-upload-status');
   progress.classList.add('active');
-  status.textContent = `Uploading ${files.length} file(s) and ingesting...`;
+  status.textContent = `Uploading ${files.length} file(s)...`;
 
   const formData = new FormData();
   for (let i = 0; i < files.length; i++) {
@@ -652,21 +706,56 @@ async function uploadCorpusFiles(files) {
     const r = await fetch('/api/corpus/upload', { method: 'POST', body: formData });
     const data = await r.json();
 
-    if (data.error && data.ingested === 0) {
-      toast(data.error, 'error');
+    if (data.skipped && data.skipped.length > 0) {
+      toast(`Skipped: ${data.skipped.map(s => s.name).join(', ')}`, 'error');
+    }
+
+    if (data.uploaded > 0) {
+      toast(`Uploaded ${data.uploaded} file(s). Click "Ingest" to process.`, 'success');
+      const uploadedList = document.getElementById('corpus-uploaded-list');
+      const uploadedNames = document.getElementById('corpus-uploaded-names');
+      uploadedList.style.display = 'block';
+      uploadedNames.textContent = `Ready to ingest: ${data.files.join(', ')}`;
     } else {
-      toast(`Ingested ${data.ingested} document(s) — ${data.total_chunks} total chunks`, 'success');
-      if (data.skipped && data.skipped.length > 0) {
-        toast(`Skipped: ${data.skipped.map(s => s.name).join(', ')}`, 'error');
-      }
-      loadCorpus();
-      refreshStatus();
+      toast('No supported files uploaded', 'error');
     }
   } catch(e) {
     toast('Upload failed: ' + e.message, 'error');
   } finally {
     progress.classList.remove('active');
     document.getElementById('corpus-file-input').value = '';
+  }
+}
+
+// Corpus Ingest (trigger embedding + vector store)
+async function ingestCorpus() {
+  const progress = document.getElementById('corpus-upload-progress');
+  const status = document.getElementById('corpus-upload-status');
+  progress.classList.add('active');
+  status.textContent = 'Ingesting documents (embedding + indexing)...';
+
+  try {
+    const r = await fetch('/api/corpus/ingest', { method: 'POST' });
+    const data = await r.json();
+
+    if (!r.ok) {
+      toast(data.detail || 'Ingestion failed', 'error');
+      return;
+    }
+
+    toast(`Ingested ${data.ingested} document(s) — ${data.total_chunks} total chunks`, 'success');
+
+    if (data.errors && data.errors.length > 0) {
+      data.errors.forEach(e => toast(`Error: ${e.file} - ${e.error}`, 'error'));
+    }
+
+    document.getElementById('corpus-uploaded-list').style.display = 'none';
+    loadCorpus();
+    refreshStatus();
+  } catch(e) {
+    toast('Ingestion failed: ' + e.message, 'error');
+  } finally {
+    progress.classList.remove('active');
   }
 }
 
@@ -707,6 +796,52 @@ async function uploadSkill(input) {
     toast('Upload failed: ' + e.message, 'error');
   } finally {
     input.value = '';
+  }
+}
+
+// Settings
+async function loadSettings() {
+  try {
+    const r = await fetch('/api/settings');
+    const data = await r.json();
+
+    document.getElementById('settings-provider').value = data.llm_provider || 'ollama';
+    document.getElementById('settings-model').value = data.llm_model || '';
+    document.getElementById('settings-embedding').value = data.embedding_model || '';
+    document.getElementById('settings-ollama-url').value = data.ollama_url || '';
+
+    const statusDiv = document.getElementById('settings-provider-status');
+    const configured = data.configured_providers || {};
+    statusDiv.innerHTML = Object.entries(configured).map(([name, ready]) =>
+      `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border);">
+        <span>${name}</span>
+        <span style="color:${ready ? 'var(--green)' : 'var(--text3)'};">${ready ? 'Configured' : 'Not configured'}</span>
+      </div>`
+    ).join('');
+  } catch(e) {
+    toast('Failed to load settings', 'error');
+  }
+}
+
+async function saveSettings() {
+  const payload = {
+    llm_provider: document.getElementById('settings-provider').value,
+    llm_model: document.getElementById('settings-model').value,
+    embedding_model: document.getElementById('settings-embedding').value,
+    ollama_url: document.getElementById('settings-ollama-url').value,
+  };
+
+  try {
+    const r = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    toast(data.message || 'Settings saved', 'success');
+    refreshStatus();
+  } catch(e) {
+    toast('Failed to save settings: ' + e.message, 'error');
   }
 }
 </script>
