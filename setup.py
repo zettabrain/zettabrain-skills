@@ -48,6 +48,10 @@ setup(
         "jinja2>=3.1.2",
         "weasyprint>=60.0",
         "markdown>=3.5",
+        "chromadb>=0.4.22",
+        "numpy<2.0",
+        "pypdf>=3.17.0",
+        "python-docx>=1.1.0",
     ],
     extras_require={
         "dev": [

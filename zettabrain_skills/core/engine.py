@@ -5,7 +5,7 @@ Document generation engine - Core orchestration logic
 import uuid
 import time
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 from zettabrain_skills.core.models import Skill, GenerationRequest, GenerationResult
 from zettabrain_skills.llm.base import LLMProvider
 from zettabrain_skills.llm.factory import create_llm_provider
@@ -14,18 +14,35 @@ from zettabrain_skills.llm.factory import create_llm_provider
 class GenerationEngine:
     """Core document generation engine"""
 
-    def __init__(self, llm_provider: Optional[LLMProvider] = None):
+    def __init__(
+        self,
+        llm_provider: Optional[LLMProvider] = None,
+        corpus_retriever=None,
+    ):
         """
         Initialize generation engine
 
         Args:
             llm_provider: LLM provider instance (defaults to configured provider)
-                         Uses LLM_PROVIDER env var: ollama (default), groq, together, bedrock
+            corpus_retriever: Optional CorpusRetriever for corpus-grounded generation
         """
         self.llm_provider = llm_provider or create_llm_provider()
+        self._corpus_retriever = corpus_retriever
+
+    @property
+    def corpus_retriever(self):
+        return self._corpus_retriever
+
+    @corpus_retriever.setter
+    def corpus_retriever(self, retriever):
+        self._corpus_retriever = retriever
 
     def build_prompt(
-        self, skill: Skill, user_input: str, context: Optional[Dict[str, Any]] = None
+        self,
+        skill: Skill,
+        user_input: str,
+        context: Optional[Dict[str, Any]] = None,
+        corpus_context: Optional[str] = None,
     ) -> str:
         """
         Build prompt from skill instructions + user input + context
@@ -33,7 +50,8 @@ class GenerationEngine:
         Args:
             skill: Skill to execute
             user_input: User's request/input
-            context: Additional context (discovery data, corpus, etc.)
+            context: Additional context (discovery data, etc.)
+            corpus_context: Pre-formatted corpus retrieval context
 
         Returns:
             Complete prompt for LLM
@@ -52,7 +70,12 @@ class GenerationEngine:
         prompt_parts.append(skill.instructions)
         prompt_parts.append("")
 
-        # Context from discovery or corpus
+        # Corpus context (from vector retrieval)
+        if corpus_context:
+            prompt_parts.append(corpus_context)
+            prompt_parts.append("")
+
+        # Context from discovery or other sources
         if context:
             prompt_parts.append("# CONTEXT")
             prompt_parts.append(
@@ -76,7 +99,14 @@ class GenerationEngine:
 
         if skill.citation_required:
             prompt_parts.append(
-                "IMPORTANT: Include citations to source documents where applicable."
+                "IMPORTANT: Include citations to source documents where applicable. "
+                "Reference the source title and reference number for each claim."
+            )
+
+        if corpus_context and not skill.citation_required:
+            prompt_parts.append(
+                "When using information from the corpus context above, "
+                "note the source document title."
             )
 
         prompt_parts.append("")
@@ -98,8 +128,30 @@ class GenerationEngine:
         start_time = time.time()
 
         try:
+            # Retrieve corpus context if skill requires it
+            corpus_context = None
+            citations: List[str] = []
+
+            if skill.requires_corpus and self._corpus_retriever:
+                corpus_text, citation_objects = (
+                    self._corpus_retriever.get_context_for_generation(
+                        query=request.input,
+                        n_results=5,
+                        min_relevance=0.3,
+                    )
+                )
+                if corpus_text:
+                    corpus_context = corpus_text
+                    citations = [
+                        f"{c.document_title}"
+                        + (f" ({c.citation_ref})" if c.citation_ref else "")
+                        for c in citation_objects
+                    ]
+
             # Build prompt
-            prompt = self.build_prompt(skill, request.input, request.context)
+            prompt = self.build_prompt(
+                skill, request.input, request.context, corpus_context
+            )
 
             # Use request overrides or skill defaults
             temperature = request.temperature if request.temperature is not None else skill.temperature
@@ -126,10 +178,12 @@ class GenerationEngine:
                     "temperature": temperature,
                     "max_tokens": max_tokens,
                     "model": getattr(self.llm_provider, "model", "unknown"),
+                    "corpus_used": corpus_context is not None,
                 },
                 created_at=datetime.now(),
                 success=True,
                 generation_time_ms=generation_time_ms,
+                citations=citations,
             )
 
             return result

@@ -14,6 +14,7 @@ from zettabrain_skills.skills.parser import load_skill
 from zettabrain_skills.core.engine import GenerationEngine
 from zettabrain_skills.core.models import GenerationRequest
 from zettabrain_skills.discovery.parser import DiscoveryParser
+from zettabrain_skills.corpus.retrieval import CorpusRetriever
 
 console = Console()
 
@@ -280,6 +281,163 @@ def show_discovery_info(info_path):
 
     except Exception as e:
         console.print(f"[red]✗ Error loading business info: {e}[/red]")
+        raise click.Abort()
+
+
+@app.group()
+def corpus():
+    """Corpus management commands - ingest, search, and manage source documents"""
+    pass
+
+
+@corpus.command('ingest')
+@click.argument('path', type=click.Path(exists=True))
+@click.option('--corpus-path', '-c', default='.corpus', help='Corpus storage directory')
+@click.option('--chunk-size', default=1000, help='Text chunk size in characters')
+@click.option('--chunk-overlap', default=200, help='Overlap between chunks')
+@click.option('--embedding-model', default='nomic-embed-text', help='Ollama embedding model')
+def corpus_ingest(path, corpus_path, chunk_size, chunk_overlap, embedding_model):
+    """Ingest documents into the corpus (PDF, DOCX, TXT, MD)"""
+
+    try:
+        retriever = CorpusRetriever(
+            corpus_path=corpus_path,
+            embedding_model=embedding_model,
+        )
+        retriever.ingestor.chunk_size = chunk_size
+        retriever.ingestor.chunk_overlap = chunk_overlap
+
+        target = Path(path)
+        count = retriever.ingest(target)
+
+        console.print()
+        console.print(Panel(
+            f"[green]Ingested {count} document(s)[/green]\n"
+            f"Total documents: {retriever.document_count}\n"
+            f"Total chunks: {retriever.chunk_count}",
+            title="Corpus Ingestion Complete",
+            border_style="green"
+        ))
+
+    except Exception as e:
+        console.print(f"[red]✗ Ingestion failed: {e}[/red]")
+        raise click.Abort()
+
+
+@corpus.command('search')
+@click.argument('query')
+@click.option('--corpus-path', '-c', default='.corpus', help='Corpus storage directory')
+@click.option('--n-results', '-n', default=5, help='Number of results')
+@click.option('--min-relevance', default=0.3, help='Minimum relevance score (0.0-1.0)')
+def corpus_search(query, corpus_path, n_results, min_relevance):
+    """Search the corpus for relevant content"""
+
+    try:
+        retriever = CorpusRetriever(corpus_path=corpus_path)
+
+        if retriever.chunk_count == 0:
+            console.print("[yellow]Corpus is empty. Run 'zbs corpus ingest' first.[/yellow]")
+            raise click.Abort()
+
+        results = retriever.search(query, n_results=n_results, min_relevance=min_relevance)
+
+        if not results:
+            console.print("[yellow]No relevant results found.[/yellow]")
+            return
+
+        console.print(f"\n[bold]Found {len(results)} result(s) for:[/bold] {query}\n")
+
+        for i, result in enumerate(results, 1):
+            c = result.citation
+            score_color = "green" if result.score > 0.7 else "yellow" if result.score > 0.5 else "red"
+
+            table = Table(show_header=False, box=None, padding=(0, 1))
+            table.add_column("Label", style="cyan", width=12)
+            table.add_column("Value")
+
+            table.add_row("Source", c.document_title)
+            if c.citation_ref:
+                table.add_row("Reference", c.citation_ref)
+            if c.issuing_body:
+                table.add_row("Issued by", c.issuing_body)
+            table.add_row("Relevance", f"[{score_color}]{result.score:.2f}[/{score_color}]")
+
+            console.print(Panel(
+                table,
+                title=f"Result {i}",
+                subtitle=f"Chunk {c.chunk_index}",
+                border_style="blue"
+            ))
+            console.print(f"  {result.chunk.content[:300]}...")
+            console.print()
+
+    except click.exceptions.Abort:
+        raise
+    except Exception as e:
+        console.print(f"[red]✗ Search failed: {e}[/red]")
+        raise click.Abort()
+
+
+@corpus.command('status')
+@click.option('--corpus-path', '-c', default='.corpus', help='Corpus storage directory')
+def corpus_status(corpus_path):
+    """Show corpus status and statistics"""
+
+    try:
+        retriever = CorpusRetriever(corpus_path=corpus_path)
+        manifest = retriever.ingestor.get_manifest()
+
+        table = Table(title="Corpus Status", show_header=False)
+        table.add_column("Property", style="cyan")
+        table.add_column("Value", style="white")
+
+        table.add_row("Corpus ID", manifest.corpus_id)
+        table.add_row("Documents", str(manifest.document_count))
+        table.add_row("Active", str(len(manifest.current_documents)))
+        table.add_row("Vector chunks", str(retriever.chunk_count))
+        table.add_row("Last updated", manifest.updated_at.strftime("%Y-%m-%d %H:%M:%S"))
+
+        console.print(table)
+
+        if manifest.documents:
+            console.print()
+            doc_table = Table(title="Documents")
+            doc_table.add_column("Title", style="white")
+            doc_table.add_column("Type", style="cyan")
+            doc_table.add_column("Chunks", style="green")
+            doc_table.add_column("Status", style="yellow")
+            doc_table.add_column("Ingested", style="dim")
+
+            for doc in manifest.documents:
+                doc_table.add_row(
+                    doc.title[:40],
+                    doc.file_type,
+                    str(doc.chunk_count),
+                    doc.status.value,
+                    doc.ingested_at.strftime("%Y-%m-%d"),
+                )
+
+            console.print(doc_table)
+
+    except Exception as e:
+        console.print(f"[red]✗ Error: {e}[/red]")
+        raise click.Abort()
+
+
+@corpus.command('reset')
+@click.option('--corpus-path', '-c', default='.corpus', help='Corpus storage directory')
+@click.confirmation_option(prompt='This will delete all vector data. Continue?')
+def corpus_reset(corpus_path):
+    """Reset the vector store (keeps manifest for audit trail)"""
+
+    try:
+        retriever = CorpusRetriever(corpus_path=corpus_path)
+        retriever.reset()
+        console.print("[green]✓ Vector store reset successfully.[/green]")
+        console.print("[dim]Note: Manifest preserved. Re-run ingest to rebuild vectors.[/dim]")
+
+    except Exception as e:
+        console.print(f"[red]✗ Reset failed: {e}[/red]")
         raise click.Abort()
 
 

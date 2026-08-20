@@ -292,7 +292,7 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = '3rva-quote-{{ quote.id }}.txt';
+            a.download = 'document-{{ quote.id }}.txt';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
