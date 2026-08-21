@@ -82,10 +82,8 @@ class CorpusRetriever:
         try:
             raw_results = self.store.search(query, n_results=n_results, where=where)
         except Exception:
+            # Filter not supported (old corpus without business_type field) — skip corpus
             raw_results = []
-        # Fallback to unfiltered if filtered returns nothing
-        if not raw_results and where:
-            raw_results = self.store.search(query, n_results=n_results)
 
         search_results = []
         for hit in raw_results:
