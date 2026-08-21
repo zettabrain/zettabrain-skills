@@ -243,11 +243,12 @@
           <span style="font-size:12px; color:var(--accent); font-weight:600;" id="selected-skill-name"></span>
         </div>
         <div class="form-row">
-          <input class="input-field" id="input-name" placeholder="Customer name (optional)" />
+          <input class="input-field" id="input-name" placeholder="Company / Customer name (optional)" />
           <input class="input-field" id="input-email" placeholder="Email (optional)" />
         </div>
+        <div class="form-row" id="skill-variables" style="display:none; flex-wrap:wrap;"></div>
         <div class="input-wrap">
-          <textarea class="input-field" id="input-text" placeholder="Describe what document you need..." onkeydown="handleKey(event)"></textarea>
+          <textarea class="input-field" id="input-text" placeholder="Describe what you need — e.g., 'Generate a bid proposal for a 3-bedroom house renovation...'" onkeydown="handleKey(event)"></textarea>
           <button class="btn btn-primary" id="send-btn" onclick="generate()" style="height:60px; padding:0 20px;">Generate</button>
         </div>
       </div>
@@ -479,6 +480,7 @@ let skills = [];
 let selectedSkill = null;
 let isGenerating = false;
 let currentAnswer = '';
+let lastDocId = null;
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
@@ -553,12 +555,24 @@ function renderSkillList() {
 
 function selectSkill(idx) {
   selectedSkill = skills[idx];
+  lastDocId = null;
   renderSkillList();
   document.getElementById('selected-skill-info').style.display = 'block';
   document.getElementById('selected-skill-name').textContent = selectedSkill.display_name + ' v' + selectedSkill.version;
   // Clear output area for fresh skill context
   const area = document.getElementById('gen-area');
-  area.innerHTML = '<div class="welcome" id="welcome"><h2>Generate Documents with AI</h2><p>Select a skill from the sidebar, describe what you need, and get a professional document in seconds.</p></div>';
+  area.innerHTML = '<div class="welcome" id="welcome"><h2>' + selectedSkill.display_name + '</h2><p>' + selectedSkill.description + '</p></div>';
+  // Render variable fields if skill has {{variables}}
+  const varsContainer = document.getElementById('skill-variables');
+  if (selectedSkill.variables && selectedSkill.variables.length > 0) {
+    varsContainer.innerHTML = selectedSkill.variables.map(v =>
+      `<input class="input-field skill-var-field" data-var="${v}" placeholder="${v.replace(/_/g, ' ')}" style="flex:1; min-width:140px;" />`
+    ).join('');
+    varsContainer.style.display = 'flex';
+  } else {
+    varsContainer.innerHTML = '';
+    varsContainer.style.display = 'none';
+  }
   document.getElementById('input-text').focus();
 }
 
@@ -571,9 +585,20 @@ function handleKey(e) {
 }
 
 async function generate() {
-  const inputText = document.getElementById('input-text').value.trim();
+  let inputText = document.getElementById('input-text').value.trim();
   if (!inputText || isGenerating) return;
   if (!selectedSkill) { toast('Select a skill first', 'error'); return; }
+
+  // Append variable values to the input
+  const varFields = document.querySelectorAll('.skill-var-field');
+  if (varFields.length > 0) {
+    const vars = [];
+    varFields.forEach(f => {
+      const val = f.value.trim();
+      if (val) vars.push(`${f.dataset.var.replace(/_/g, ' ')}: ${val}`);
+    });
+    if (vars.length > 0) inputText += '\n\n' + vars.join('\n');
+  }
 
   isGenerating = true;
   currentAnswer = '';
@@ -649,6 +674,7 @@ function finishGeneration(data) {
   const meta = document.getElementById('result-meta');
   if (meta) {
     if (data) {
+      lastDocId = data.id || null;
       const timeStr = data.generation_time_ms >= 1000
         ? (data.generation_time_ms / 1000).toFixed(1) + 's'
         : data.generation_time_ms + 'ms';
@@ -660,12 +686,32 @@ function finishGeneration(data) {
       meta.innerHTML = `${data.model || ''} &middot; ${timeStr} ${downloadLinks}`;
 
       if (data.citations && data.citations.length > 0) {
-        const card = document.getElementById('current-result');
+        const citCard = document.getElementById('current-result');
         const citDiv = document.createElement('div');
         citDiv.className = 'result-citations';
         citDiv.innerHTML = '<div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:600;">Sources</div>' +
           data.citations.map(c => `<span class="citation-chip">${c}</span>`).join('');
-        card.appendChild(citDiv);
+        citCard.appendChild(citDiv);
+      }
+
+      // Add quick actions + refinement input
+      const actCard = document.getElementById('current-result');
+      if (actCard && docId) {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'result-actions';
+        actionsDiv.innerHTML = `
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
+            <button class="btn btn-ghost btn-sm" onclick="refineQuick('${docId}','Make it more formal and professional')">More Formal</button>
+            <button class="btn btn-ghost btn-sm" onclick="refineQuick('${docId}','Make it more concise — reduce length by 30%')">More Concise</button>
+            <button class="btn btn-ghost btn-sm" onclick="refineQuick('${docId}','Add more detail and expand each section')">Add Detail</button>
+            <button class="btn btn-ghost btn-sm" onclick="refineQuick('${docId}','Rewrite in a friendlier, less corporate tone')">Friendlier Tone</button>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:10px; align-items:center;">
+            <input class="input-field" id="refine-input-${docId}" placeholder="Or type: add a section about..., change the payment terms to..." style="flex:1; font-size:12px; padding:8px 10px;" onkeydown="if(event.key==='Enter'){refineCustom('${docId}')}" />
+            <button class="btn btn-primary btn-sm" onclick="refineCustom('${docId}')">Refine</button>
+          </div>
+        `;
+        actCard.appendChild(actionsDiv);
       }
     } else {
       meta.innerHTML = '<span style="color:var(--red);">Failed</span>';
@@ -685,6 +731,55 @@ function setGenerating(active) {
   const btn = document.getElementById('send-btn');
   btn.disabled = active;
   btn.innerHTML = active ? '<div class="spinner"></div>' : 'Generate';
+}
+
+// Refinement
+async function refineQuick(docId, instruction) {
+  await refineDocument(docId, instruction);
+}
+
+async function refineCustom(docId) {
+  const input = document.getElementById(`refine-input-${docId}`);
+  if (!input) return;
+  const instruction = input.value.trim();
+  if (!instruction) { toast('Type what you want to change', 'error'); return; }
+  await refineDocument(docId, instruction);
+}
+
+async function refineDocument(docId, instruction) {
+  if (isGenerating) return;
+  isGenerating = true;
+
+  const area = document.getElementById('gen-area');
+  const card = document.createElement('div');
+  card.className = 'result-card';
+  card.id = 'current-result';
+  card.innerHTML = `
+    <div class="result-header">
+      <span style="font-weight:600; font-size:13px;">Refining: ${instruction.substring(0, 50)}${instruction.length > 50 ? '...' : ''}</span>
+      <span class="result-meta" id="result-meta"><div class="spinner"></div></span>
+    </div>
+    <div class="result-content" id="result-content"><span class="cursor"></span> Refining document...</div>
+  `;
+  area.appendChild(card);
+  area.scrollTop = area.scrollHeight;
+
+  try {
+    const r = await fetch('/api/documents/refine', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ doc_id: docId, instruction })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || 'Refinement failed');
+
+    currentAnswer = data.content;
+    finishGeneration(data);
+  } catch(e) {
+    currentAnswer = '';
+    finishGeneration(null);
+    toast(e.message, 'error');
+  }
 }
 
 // History

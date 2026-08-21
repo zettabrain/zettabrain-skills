@@ -98,10 +98,13 @@ _load_persisted_settings()
 
 
 def _load_skills() -> List[Dict[str, Any]]:
+    import re
     skills = []
     for skill_file in sorted(glob.glob(f"{SKILLS_DIR}/*.md")):
         try:
             skill = load_skill(skill_file)
+            # Detect {{variables}} in instructions
+            variables = list(set(re.findall(r"\{\{(\w+)\}\}", skill.instructions)))
             skills.append({
                 "file": skill_file,
                 "name": skill.name,
@@ -111,6 +114,7 @@ def _load_skills() -> List[Dict[str, Any]]:
                 "version": skill.version,
                 "requires_corpus": skill.requires_corpus,
                 "citation_required": skill.citation_required,
+                "variables": variables,
             })
         except Exception:
             continue
@@ -390,6 +394,67 @@ async def api_delete_document(doc_id: str):
         raise HTTPException(status_code=404, detail="Document not found")
     document_store.delete(doc_id)
     return {"deleted": True, "id": doc_id}
+
+
+class RefineRequest(BaseModel):
+    instruction: str
+    doc_id: str
+
+
+@app.post("/api/documents/refine")
+async def api_refine_document(req: RefineRequest):
+    """Refine/modify an existing generated document with a follow-up instruction."""
+    from zettabrain_skills.llm.factory import create_llm_provider
+
+    doc = document_store.get_by_id(req.doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    provider = create_llm_provider()
+    if not provider.check_health():
+        raise HTTPException(status_code=503, detail="LLM provider is not running")
+
+    refine_prompt = f"""You are an AI document editor. You previously generated the following document:
+
+---
+{doc['content']}
+---
+
+The user wants you to modify this document with the following instruction:
+"{req.instruction}"
+
+Rewrite the FULL document incorporating the requested changes. Maintain the same overall structure and format unless the instruction specifically asks to change it. Output the complete revised document."""
+
+    start_time = time.time()
+    try:
+        content = provider.generate(prompt=refine_prompt, temperature=0.3, max_tokens=4000)
+        generation_time_ms = int((time.time() - start_time) * 1000)
+
+        import uuid
+        new_id = str(uuid.uuid4())
+        doc_data = {
+            "id": new_id,
+            "skill_name": doc.get("skill_name", "refined"),
+            "skill_display": doc.get("skill_display", "Refined Document"),
+            "customer_name": doc.get("customer_name", "Customer"),
+            "customer_email": doc.get("customer_email", ""),
+            "request": f"Refined: {req.instruction}",
+            "content": content,
+            "citations": doc.get("citations", []),
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "generation_time_ms": generation_time_ms,
+        }
+        document_store.insert(doc_data)
+
+        return {
+            "id": new_id,
+            "content": content,
+            "generation_time_ms": generation_time_ms,
+            "model": getattr(provider, "model", "unknown"),
+            "original_id": req.doc_id,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Refinement failed: {e}")
 
 
 @app.get("/api/documents/{doc_id}/pdf")
