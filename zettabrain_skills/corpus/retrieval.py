@@ -75,9 +75,11 @@ class CorpusRetriever:
         query: str,
         n_results: int = 5,
         min_relevance: float = 0.0,
+        business_type: Optional[str] = None,
     ) -> List[SearchResult]:
         """Search the corpus and return results with citations."""
-        raw_results = self.store.search(query, n_results=n_results)
+        where = {"business_type": business_type} if business_type else None
+        raw_results = self.store.search(query, n_results=n_results, where=where)
 
         search_results = []
         for hit in raw_results:
@@ -126,12 +128,13 @@ class CorpusRetriever:
         query: str,
         n_results: int = 5,
         min_relevance: float = 0.3,
+        business_type: Optional[str] = None,
     ) -> tuple[str, List[Citation]]:
         """Retrieve corpus context formatted for prompt injection.
 
         Returns (context_text, citations).
         """
-        results = self.search(query, n_results=n_results, min_relevance=min_relevance)
+        results = self.search(query, n_results=n_results, min_relevance=min_relevance, business_type=business_type)
 
         if not results:
             return "", []

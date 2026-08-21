@@ -256,6 +256,7 @@ async def ws_generate(websocket: WebSocket):
                     corpus_text, citation_objects = (
                         engine.corpus_retriever.get_context_for_generation(
                             query=input_text, n_results=5, min_relevance=0.3,
+                            business_type=skill.business_type if skill.business_type != "generic" else None,
                         )
                     )
                     if corpus_text:
@@ -365,51 +366,34 @@ async def api_document_pdf(doc_id: str):
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 
-    # Header
-    pdf.set_font("Helvetica", "B", 20)
+    customer_name = doc.get("customer_name", "")
+
+    # Letterhead: Customer/Company name
+    if customer_name and customer_name != "Customer":
+        pdf.set_font("Helvetica", "B", 22)
+        pdf.set_text_color(33, 37, 41)
+        pdf.cell(0, 12, sanitize(customer_name), ln=True, align="C")
+        pdf.ln(2)
+
+    # Document type subtitle
+    pdf.set_font("Helvetica", "", 12)
     pdf.set_text_color(99, 102, 241)
-    pdf.cell(0, 12, "ZettaBrain Skills", ln=True, align="C")
-    pdf.set_font("Helvetica", "I", 11)
-    pdf.set_text_color(136, 136, 136)
     pdf.cell(0, 8, sanitize(doc.get("skill_display", "Document")), ln=True, align="C")
-    pdf.ln(4)
+    pdf.ln(3)
     pdf.set_draw_color(99, 102, 241)
-    pdf.set_line_width(0.8)
-    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-    pdf.ln(8)
-
-    # Metadata
-    pdf.set_fill_color(248, 249, 255)
-    pdf.set_draw_color(99, 102, 241)
-    y_start = pdf.get_y()
-    pdf.rect(10, y_start, 190, 24, style="F")
     pdf.set_line_width(0.6)
-    pdf.line(10, y_start, 10, y_start + 24)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(6)
 
-    pdf.set_xy(14, y_start + 2)
-    pdf.set_font("Helvetica", "B", 10)
-    pdf.set_text_color(99, 102, 241)
-    pdf.cell(22, 6, "Customer:")
-    pdf.set_font("Helvetica", "", 10)
-    pdf.set_text_color(51, 51, 51)
-    pdf.cell(0, 6, sanitize(doc.get("customer_name", "")), ln=True)
-
-    pdf.set_x(14)
-    pdf.set_font("Helvetica", "B", 10)
-    pdf.set_text_color(99, 102, 241)
-    pdf.cell(22, 6, "Generated:")
-    pdf.set_font("Helvetica", "", 10)
-    pdf.set_text_color(51, 51, 51)
-    pdf.cell(0, 6, doc.get("created_at", ""), ln=True)
-
-    pdf.set_x(14)
-    pdf.set_font("Helvetica", "B", 10)
-    pdf.set_text_color(99, 102, 241)
-    pdf.cell(22, 6, "ID:")
-    pdf.set_font("Helvetica", "", 10)
-    pdf.set_text_color(51, 51, 51)
-    pdf.cell(0, 6, doc["id"][:16] + "...", ln=True)
-    pdf.ln(10)
+    # Metadata row
+    pdf.set_font("Helvetica", "", 9)
+    pdf.set_text_color(120, 120, 120)
+    meta_parts = []
+    if doc.get("created_at"):
+        meta_parts.append(f"Date: {doc['created_at']}")
+    meta_parts.append(f"Ref: {doc['id'][:12]}")
+    pdf.cell(0, 5, " | ".join(meta_parts), ln=True, align="C")
+    pdf.ln(8)
 
     # Content
     left_margin = pdf.l_margin
@@ -468,12 +452,12 @@ async def api_document_pdf(doc_id: str):
 
     # Footer
     pdf.ln(10)
-    pdf.set_draw_color(200, 200, 200)
+    pdf.set_draw_color(220, 220, 220)
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-    pdf.ln(4)
-    pdf.set_font("Helvetica", "I", 8)
-    pdf.set_text_color(150, 150, 150)
-    pdf.cell(0, 5, "Powered by ZettaBrain Skills", ln=True, align="C")
+    pdf.ln(3)
+    pdf.set_font("Helvetica", "I", 7)
+    pdf.set_text_color(170, 170, 170)
+    pdf.cell(0, 4, "Generated with ZettaBrain Skills | zettabrain.ai", ln=True, align="C")
 
     pdf_output = pdf.output()
     skill_name = doc.get("skill_name", "document").replace(" ", "-")
@@ -500,30 +484,28 @@ async def api_document_docx(doc_id: str):
     style.font.name = "Arial"
     style.font.size = Pt(11)
 
-    heading = docx_doc.add_heading("ZettaBrain Skills", level=0)
-    heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    for run in heading.runs:
-        run.font.color.rgb = RGBColor(0x63, 0x66, 0xF1)
+    customer_name = doc.get("customer_name", "")
 
+    # Letterhead: Customer/Company name
+    if customer_name and customer_name != "Customer":
+        heading = docx_doc.add_heading(customer_name, level=0)
+        heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        for run in heading.runs:
+            run.font.color.rgb = RGBColor(0x21, 0x25, 0x29)
+
+    # Document type subtitle
     subtitle = docx_doc.add_paragraph()
     subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = subtitle.add_run(doc.get("skill_display", "Document"))
-    run.font.italic = True
-    run.font.color.rgb = RGBColor(0x88, 0x88, 0x88)
+    run.font.color.rgb = RGBColor(0x63, 0x66, 0xF1)
+    run.font.size = Pt(12)
 
-    docx_doc.add_paragraph()
-
-    meta_table = docx_doc.add_table(rows=3, cols=2)
-    meta_table.style = "Light Shading Accent 1"
-    cells = meta_table.rows[0].cells
-    cells[0].text = "Customer"
-    cells[1].text = doc.get("customer_name", "")
-    cells = meta_table.rows[1].cells
-    cells[0].text = "Generated"
-    cells[1].text = doc.get("created_at", "")
-    cells = meta_table.rows[2].cells
-    cells[0].text = "Document ID"
-    cells[1].text = doc["id"]
+    # Metadata line
+    meta_para = docx_doc.add_paragraph()
+    meta_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    meta_run = meta_para.add_run(f"Date: {doc.get('created_at', '')} | Ref: {doc['id'][:12]}")
+    meta_run.font.size = Pt(9)
+    meta_run.font.color.rgb = RGBColor(0x88, 0x88, 0x88)
 
     docx_doc.add_paragraph()
 
@@ -546,9 +528,9 @@ async def api_document_docx(doc_id: str):
     footer = docx_doc.sections[0].footer
     footer_para = footer.paragraphs[0]
     footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = footer_para.add_run("Powered by ZettaBrain Skills")
-    run.font.size = Pt(8)
-    run.font.color.rgb = RGBColor(0x99, 0x99, 0x99)
+    run = footer_para.add_run("Generated with ZettaBrain Skills | zettabrain.ai")
+    run.font.size = Pt(7)
+    run.font.color.rgb = RGBColor(0xAA, 0xAA, 0xAA)
 
     docx_bytes = BytesIO()
     docx_doc.save(docx_bytes)

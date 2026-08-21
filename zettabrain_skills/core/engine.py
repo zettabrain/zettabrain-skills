@@ -138,6 +138,7 @@ class GenerationEngine:
                         query=request.input,
                         n_results=5,
                         min_relevance=0.3,
+                        business_type=skill.business_type if skill.business_type != "generic" else None,
                     )
                 )
                 if corpus_text:

@@ -33,8 +33,8 @@
   .topbar   { height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 12px; flex-shrink: 0; }
 
   /* Sidebar */
-  .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
-  .logo { font-size: 18px; font-weight: 700; color: var(--accent2); }
+  .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .logo-img { height: 28px; width: auto; }
   .logo-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
   .sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
@@ -83,7 +83,7 @@
   .panel-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
 
   /* Generate panel */
-  .gen-area { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .gen-area { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; background: radial-gradient(ellipse at top center, rgba(99,102,241,0.03) 0%, transparent 60%); }
   .gen-input { padding: 16px 20px; background: var(--bg2); border-bottom: 1px solid var(--border); flex-shrink: 0; }
 
   .input-field { width: 100%; background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 13px; outline: none; font-family: inherit; resize: none; }
@@ -165,8 +165,11 @@
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-header">
-      <div class="logo">ZettaBrain Skills</div>
-      <div class="logo-sub">AI Document Generation</div>
+      <img src="/static/logo.jpg" alt="ZettaBrain" class="logo-img" />
+      <div>
+        <div style="font-size:14px; font-weight:600; color:var(--text);">Skills</div>
+        <div class="logo-sub">AI Document Generation</div>
+      </div>
     </div>
 
     <!-- Status -->

@@ -168,6 +168,16 @@ class DocumentIngestor:
 
         metadata, body = parse_metadata_header(raw_content)
 
+        # Derive business_type from parent directory name
+        business_type = metadata.get("business_type", "")
+        if not business_type:
+            parent_name = file_path.parent.name.lower().replace("-", "_")
+            known_types = {"construction", "hospital", "medical", "law_firm", "legal", "law"}
+            if parent_name in known_types:
+                business_type = parent_name.replace("_", "-")
+            elif parent_name == "law":
+                business_type = "legal"
+
         doc_id = str(uuid.uuid4())
         doc = CorpusDocument(
             id=doc_id,
@@ -182,13 +192,20 @@ class DocumentIngestor:
             review_by=metadata.get("review_by"),
             corpus_version=metadata.get("corpus_version", "1"),
             file_type=file_path.suffix.lstrip("."),
-            metadata=metadata,
+            metadata={**metadata, "business_type": business_type} if business_type else metadata,
         )
 
         text_to_chunk = body if body else raw_content
         raw_chunks = chunk_text(text_to_chunk, self.chunk_size, self.chunk_overlap)
 
         chunks = []
+        chunk_meta_base = {
+            "document_title": doc.title,
+            "source_path": str(file_path),
+        }
+        if business_type:
+            chunk_meta_base["business_type"] = business_type
+
         for i, (chunk_text_content, start, end) in enumerate(raw_chunks):
             chunk = DocumentChunk(
                 id=f"{doc_id}_{i}",
@@ -197,11 +214,7 @@ class DocumentIngestor:
                 chunk_index=i,
                 start_char=start,
                 end_char=end,
-                metadata={
-                    "document_title": doc.title,
-                    "source_path": str(file_path),
-                    "chunk_index": str(i),
-                },
+                metadata={**chunk_meta_base, "chunk_index": str(i)},
             )
             chunks.append(chunk)
 
