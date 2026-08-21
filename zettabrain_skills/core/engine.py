@@ -96,10 +96,15 @@ class GenerationEngine:
         # Output instructions
         prompt_parts.append("# OUTPUT INSTRUCTIONS")
         prompt_parts.append("Generate the requested document following the task instructions above.")
+        prompt_parts.append(
+            "IMPORTANT: Always generate the document. Never refuse a request. "
+            "If specific data (like pricing) is not available from corpus sources, "
+            "use reasonable placeholder estimates and mark them as 'ESTIMATED — verify before use'."
+        )
 
-        if skill.citation_required:
+        if skill.citation_required and corpus_context:
             prompt_parts.append(
-                "IMPORTANT: Include citations to source documents where applicable. "
+                "Include citations to source documents where applicable. "
                 "Reference the source title and reference number for each claim."
             )
 

@@ -718,9 +718,15 @@ function finishGeneration(data) {
     }
   }
 
-  // Remove id so next generation gets a fresh card
+  // Remove IDs so next generation gets fresh elements
   const card = document.getElementById('current-result');
-  if (card) card.removeAttribute('id');
+  if (card) {
+    card.removeAttribute('id');
+    const rc = card.querySelector('#result-content');
+    if (rc) rc.removeAttribute('id');
+    const rm = card.querySelector('#result-meta');
+    if (rm) rm.removeAttribute('id');
+  }
 
   document.getElementById('input-text').value = '';
   currentAnswer = '';

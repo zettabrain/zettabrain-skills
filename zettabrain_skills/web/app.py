@@ -414,16 +414,20 @@ async def api_refine_document(req: RefineRequest):
     if not provider.check_health():
         raise HTTPException(status_code=503, detail="LLM provider is not running")
 
-    refine_prompt = f"""You are an AI document editor. You previously generated the following document:
+    refine_prompt = f"""You are a document editor. Your ONLY job is to revise the document below based on the user's instruction. Do NOT refuse. Do NOT ask clarifying questions. Just apply the requested change and output the revised document.
 
----
+ORIGINAL DOCUMENT:
 {doc['content']}
----
 
-The user wants you to modify this document with the following instruction:
-"{req.instruction}"
+USER'S EDIT INSTRUCTION: {req.instruction}
 
-Rewrite the FULL document incorporating the requested changes. Maintain the same overall structure and format unless the instruction specifically asks to change it. Output the complete revised document."""
+RULES:
+- Apply the change directly. If the user says "1500 sq ft" they mean change the square footage to 1500.
+- Keep all other content the same unless the change logically requires adjustments (e.g., changing area may affect cost calculations).
+- Output the COMPLETE revised document with the change applied.
+- Do NOT add commentary, do NOT explain what you changed. Just output the document.
+
+REVISED DOCUMENT:"""
 
     start_time = time.time()
     try:

@@ -79,7 +79,13 @@ class CorpusRetriever:
     ) -> List[SearchResult]:
         """Search the corpus and return results with citations."""
         where = {"business_type": business_type} if business_type else None
-        raw_results = self.store.search(query, n_results=n_results, where=where)
+        try:
+            raw_results = self.store.search(query, n_results=n_results, where=where)
+        except Exception:
+            raw_results = []
+        # Fallback to unfiltered if filtered returns nothing
+        if not raw_results and where:
+            raw_results = self.store.search(query, n_results=n_results)
 
         search_results = []
         for hit in raw_results:
