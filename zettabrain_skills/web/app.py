@@ -44,8 +44,57 @@ if STATIC_DIR.exists():
 
 SKILLS_DIR = os.getenv("SKILLS_DIR", "examples")
 CORPUS_PATH = os.getenv("CORPUS_PATH", ".corpus")
+SETTINGS_FILE = os.getenv("SETTINGS_FILE", ".data/settings.json")
 
 document_store = DocumentStore()
+
+
+def _load_persisted_settings():
+    """Load settings from disk and apply to environment on startup."""
+    settings_path = Path(SETTINGS_FILE)
+    if not settings_path.exists():
+        return
+    try:
+        data = json.loads(settings_path.read_text())
+        env_map = {
+            "llm_provider": "LLM_PROVIDER",
+            "ollama_url": "OLLAMA_BASE_URL",
+            "ollama_model": "OLLAMA_MODEL",
+            "ollama_timeout": "OLLAMA_TIMEOUT",
+            "groq_api_key": "GROQ_API_KEY",
+            "groq_model": "GROQ_MODEL",
+            "together_api_key": "TOGETHER_API_KEY",
+            "together_model": "TOGETHER_MODEL",
+            "aws_access_key": "AWS_ACCESS_KEY_ID",
+            "aws_secret_key": "AWS_SECRET_ACCESS_KEY",
+            "aws_region": "AWS_REGION",
+            "bedrock_model": "BEDROCK_MODEL",
+            "embedding_model": "EMBEDDING_MODEL",
+            "embedding_url": "OLLAMA_HOST",
+        }
+        for key, env_var in env_map.items():
+            val = data.get(key)
+            if val and not os.getenv(env_var):
+                os.environ[env_var] = str(val)
+    except Exception:
+        pass
+
+
+def _save_persisted_settings(settings: Dict[str, Any]):
+    """Save current settings to disk for persistence across reinstalls."""
+    settings_path = Path(SETTINGS_FILE)
+    settings_path.parent.mkdir(parents=True, exist_ok=True)
+    existing = {}
+    if settings_path.exists():
+        try:
+            existing = json.loads(settings_path.read_text())
+        except Exception:
+            pass
+    existing.update({k: v for k, v in settings.items() if v})
+    settings_path.write_text(json.dumps(existing, indent=2))
+
+
+_load_persisted_settings()
 
 
 def _load_skills() -> List[Dict[str, Any]]:
@@ -813,9 +862,12 @@ async def api_update_settings(settings: Dict[str, Any]):
         os.environ["OLLAMA_HOST"] = settings["embedding_url"]
         updated.append("embedding_url")
 
+    # Persist to disk so settings survive reinstalls
+    _save_persisted_settings(settings)
+
     return {
         "updated": updated,
-        "message": f"Settings updated: {', '.join(updated) if updated else 'no changes'}. Restart server to persist.",
+        "message": f"Settings saved and persisted: {', '.join(updated) if updated else 'no changes'}",
     }
 
 
