@@ -229,6 +229,7 @@
       <div class="topbar-title" id="topbar-title">Generate</div>
       <div>
         <button class="tab-btn active" id="tab-generate" onclick="switchTab('generate')">Generate</button>
+        <button class="tab-btn" id="tab-builder" onclick="switchTab('builder')">Skill Builder</button>
         <button class="tab-btn" id="tab-history" onclick="switchTab('history')">History</button>
         <button class="tab-btn" id="tab-corpus" onclick="switchTab('corpus')">Corpus</button>
         <button class="tab-btn" id="tab-settings" onclick="switchTab('settings')">Settings</button>
@@ -254,6 +255,65 @@
         <div class="welcome" id="welcome">
           <h2>Generate Documents with AI</h2>
           <p>Select a skill from the sidebar, describe what you need, and get a professional document in seconds.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SKILL BUILDER PANEL -->
+    <div class="panel" id="panel-builder">
+      <div class="panel-content">
+        <div class="panel-section">
+          <h3>Create a New Skill</h3>
+          <p style="font-size:13px; color:var(--text2); margin-bottom:16px;">Describe your business process and the type of document you need. The AI will create a skill template for you.</p>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <label style="font-size:12px; color:var(--text2); display:block; margin-bottom:4px;">Business / Company Name</label>
+              <input class="input-field" id="builder-business" placeholder="e.g., Titan Construction, Meridian Law Firm, Riverside Hospital" />
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text2); display:block; margin-bottom:4px;">Document Type</label>
+              <input class="input-field" id="builder-doctype" placeholder="e.g., Invoice, Bid Proposal, Patient Discharge Summary, Sales Quote" />
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text2); display:block; margin-bottom:4px;">Describe what the document should include</label>
+              <textarea class="input-field" id="builder-description" rows="3" placeholder="e.g., A professional bid proposal for construction projects that includes cost breakdown, timeline, materials list, and payment terms"></textarea>
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text2); display:block; margin-bottom:4px;">Required Sections (optional)</label>
+              <textarea class="input-field" id="builder-sections" rows="2" placeholder="e.g., Cover letter, Project scope, Cost breakdown, Timeline, Terms and conditions"></textarea>
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text2); display:block; margin-bottom:4px;">Business Rules / Constraints (optional)</label>
+              <textarea class="input-field" id="builder-rules" rows="2" placeholder="e.g., Always include 10% contingency, payment terms are Net-30, require signature block"></textarea>
+            </div>
+            <div style="display:flex; gap:16px; align-items:center;">
+              <div>
+                <label style="font-size:12px; color:var(--text2); display:block; margin-bottom:4px;">Tone</label>
+                <select class="input-field" id="builder-tone" style="width:180px; cursor:pointer;">
+                  <option value="professional">Professional</option>
+                  <option value="formal">Formal / Legal</option>
+                  <option value="friendly">Friendly</option>
+                  <option value="technical">Technical</option>
+                </select>
+              </div>
+              <div style="margin-top:18px;">
+                <label style="font-size:12px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                  <input type="checkbox" id="builder-corpus" /> Uses reference documents (corpus)
+                </label>
+              </div>
+            </div>
+            <div style="margin-top:8px;">
+              <button class="btn btn-primary" id="builder-generate-btn" onclick="buildSkill()">Generate Skill</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel-section" id="builder-preview-section" style="display:none;">
+          <h3>Preview Generated Skill</h3>
+          <pre id="builder-preview" style="background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:16px; font-size:12px; line-height:1.6; overflow-x:auto; white-space:pre-wrap; max-height:400px; overflow-y:auto;"></pre>
+          <div style="margin-top:12px; display:flex; gap:10px;">
+            <button class="btn btn-primary" onclick="saveBuiltSkill()">Save & Activate Skill</button>
+            <button class="btn btn-ghost" onclick="buildSkill()">Regenerate</button>
+          </div>
         </div>
       </div>
     </div>
@@ -732,7 +792,7 @@ async function searchCorpus() {
 
 // Tabs
 function switchTab(tab) {
-  ['generate', 'history', 'corpus', 'settings'].forEach(t => {
+  ['generate', 'builder', 'history', 'corpus', 'settings'].forEach(t => {
     const panel = document.getElementById(`panel-${t}`);
     const btn = document.getElementById(`tab-${t}`);
     if (panel) panel.classList.toggle('active', t === tab);
@@ -1006,6 +1066,80 @@ async function testConnection() {
     }
   } catch(e) {
     toast('Connection test failed: ' + e.message, 'error');
+  }
+}
+
+// Skill Builder
+let builtSkillContent = '';
+let builtSkillFilename = '';
+
+async function buildSkill() {
+  const business = document.getElementById('builder-business').value.trim();
+  const doctype = document.getElementById('builder-doctype').value.trim();
+  const description = document.getElementById('builder-description').value.trim();
+
+  if (!business || !doctype || !description) {
+    toast('Please fill in Business Name, Document Type, and Description', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('builder-generate-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Generating...';
+
+  try {
+    const r = await fetch('/api/skills/build', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        business_name: business,
+        document_type: doctype,
+        description: description,
+        sections: document.getElementById('builder-sections').value.trim(),
+        rules: document.getElementById('builder-rules').value.trim(),
+        uses_corpus: document.getElementById('builder-corpus').checked,
+        tone: document.getElementById('builder-tone').value,
+      })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || 'Failed to generate skill');
+
+    builtSkillContent = data.content;
+    builtSkillFilename = data.filename;
+
+    document.getElementById('builder-preview').textContent = data.content;
+    document.getElementById('builder-preview-section').style.display = 'block';
+    toast('Skill generated! Review the preview below.', 'success');
+  } catch(e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Generate Skill';
+  }
+}
+
+async function saveBuiltSkill() {
+  if (!builtSkillContent) {
+    toast('No skill to save. Generate one first.', 'error');
+    return;
+  }
+
+  try {
+    const r = await fetch('/api/skills/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: builtSkillContent, filename: builtSkillFilename })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || 'Failed to save skill');
+
+    toast(`Skill "${data.display_name}" saved and ready to use!`, 'success');
+    builtSkillContent = '';
+    builtSkillFilename = '';
+    document.getElementById('builder-preview-section').style.display = 'none';
+    refreshStatus();
+  } catch(e) {
+    toast(e.message, 'error');
   }
 }
 </script>

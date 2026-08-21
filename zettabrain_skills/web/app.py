@@ -768,6 +768,142 @@ async def api_delete_skill(skill_name: str):
     raise HTTPException(status_code=404, detail=f"Skill not found: {skill_name}")
 
 
+class SkillBuilderRequest(BaseModel):
+    business_name: str
+    document_type: str
+    description: str
+    sections: str = ""
+    rules: str = ""
+    uses_corpus: bool = False
+    tone: str = "professional"
+
+
+@app.post("/api/skills/build")
+async def api_skills_build(req: SkillBuilderRequest):
+    """Use the LLM to generate a skill file from a plain-language description."""
+    from zettabrain_skills.llm.factory import create_llm_provider
+
+    provider = create_llm_provider()
+    if not provider.check_health():
+        raise HTTPException(status_code=503, detail="LLM provider is not running")
+
+    skill_prompt = f"""You are a skill file generator for ZettaBrain Skills, an AI document generation platform.
+
+Generate a complete skill file in markdown format with YAML frontmatter based on the user's description.
+
+The skill file format is:
+```
+---
+name: skill-name-in-kebab-case
+version: 1.0.0
+description: One-line description of what the skill generates
+business_type: the industry/type (e.g., construction, legal, medical, finance, retail, generic)
+requires_corpus: true/false
+citation_required: true/false
+temperature: 0.3 to 0.9 (lower = more precise, higher = more creative)
+max_tokens: 2000 to 8000
+tags:
+  - relevant
+  - tags
+---
+
+# Skill Title
+
+You are a [role] generating [document type] for [business context].
+
+## Your Task
+
+[Clear description of what to generate]
+
+## Required Sections
+
+[Numbered list of sections the document must include]
+
+## Formatting Rules
+
+[Rules about format, style, and presentation]
+
+## Important Constraints
+
+[Business rules, compliance requirements, things to always/never do]
+```
+
+USER'S REQUEST:
+- Business: {req.business_name}
+- Document type: {req.document_type}
+- Description: {req.description}
+- Sections they want: {req.sections or 'Let the AI decide appropriate sections'}
+- Business rules: {req.rules or 'None specified'}
+- Uses reference corpus: {req.uses_corpus}
+- Tone: {req.tone}
+
+Generate ONLY the skill file content (starting with ---). Make it comprehensive and professional.
+Do not wrap it in a code block. Output the raw skill file content directly."""
+
+    try:
+        content = provider.generate(prompt=skill_prompt, temperature=0.4, max_tokens=4000)
+
+        # Clean up any code fences the LLM might add
+        content = content.strip()
+        if content.startswith("```"):
+            content = "\n".join(content.split("\n")[1:])
+        if content.endswith("```"):
+            content = "\n".join(content.split("\n")[:-1])
+        content = content.strip()
+
+        if not content.startswith("---"):
+            raise HTTPException(status_code=500, detail="LLM did not generate a valid skill file")
+
+        # Generate a filename from the skill name
+        import re
+        name_match = re.search(r"^name:\s*(.+)$", content, re.MULTILINE)
+        filename = "custom-skill.md"
+        if name_match:
+            filename = name_match.group(1).strip() + ".md"
+
+        return {
+            "content": content,
+            "filename": filename,
+            "preview": True,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Skill generation failed: {e}")
+
+
+@app.post("/api/skills/save")
+async def api_skills_save(data: Dict[str, Any]):
+    """Save a generated skill file to disk."""
+    content = data.get("content", "")
+    filename = data.get("filename", "custom-skill.md")
+
+    if not content.startswith("---"):
+        raise HTTPException(status_code=400, detail="Invalid skill content")
+
+    if not filename.endswith(".md"):
+        filename += ".md"
+
+    skills_dir = Path(SKILLS_DIR)
+    skills_dir.mkdir(parents=True, exist_ok=True)
+
+    dest = skills_dir / filename
+    dest.write_text(content, encoding="utf-8")
+
+    try:
+        skill = load_skill(str(dest))
+        return {
+            "success": True,
+            "file": str(dest),
+            "name": skill.name,
+            "display_name": skill.name.replace("-", " ").title(),
+            "description": skill.description,
+        }
+    except Exception as e:
+        dest.unlink(missing_ok=True)
+        raise HTTPException(status_code=400, detail=f"Generated skill has errors: {e}")
+
+
 # ── API: Settings ───────────────────────────────────────
 
 @app.get("/api/settings")
